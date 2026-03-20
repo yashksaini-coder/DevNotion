@@ -78,32 +78,30 @@ const narrateStep = createStep({
     const agent = mastra!.getAgent('narrator-agent');
     const prompt = `Generate a blog post and diagram from this GitHub contribution data:\n\n${JSON.stringify(inputData, null, 2)}`;
 
-    // Attempt 1: ask LLM for JSON
+    // Attempt 1: structured output (Gemini native JSON schema)
+    try {
+      const result = await agent.generate(prompt, {
+        structuredOutput: { schema: NarratorOutputSchema },
+      });
+      if (result.object) {
+        console.log('Narrate step: Structured output succeeded');
+        return NarratorOutputSchema.parse(result.object);
+      }
+    } catch (err) {
+      console.warn('Narrate step: Structured output failed, falling back to text parsing...', err instanceof Error ? err.message : err);
+    }
+
+    // Attempt 2: text generation + JSON parsing
     try {
       const result = await agent.generate(prompt);
       const parsed = parseLLMResponse(result.text, NarratorOutputSchema);
       if (parsed.success) {
-        console.log('Narrate step: LLM JSON parsed successfully');
+        console.log('Narrate step: Text JSON parsed successfully');
         return parsed.data;
       }
-      console.warn('Narrate step: LLM returned invalid JSON, retrying...', parsed.error);
+      console.warn('Narrate step: LLM returned invalid JSON:', parsed.error);
     } catch (err) {
-      console.warn('Narrate step: LLM call failed, retrying...', err instanceof Error ? err.message : err);
-    }
-
-    // Attempt 2: retry with a stricter prompt
-    try {
-      const result = await agent.generate(
-        `IMPORTANT: You MUST respond with ONLY a JSON object. No markdown, no explanation.\n\n${prompt}`,
-      );
-      const parsed = parseLLMResponse(result.text, NarratorOutputSchema);
-      if (parsed.success) {
-        console.log('Narrate step: Retry succeeded');
-        return parsed.data;
-      }
-      console.warn('Narrate step: Retry also produced invalid JSON:', parsed.error);
-    } catch (err) {
-      console.warn('Narrate step: Retry LLM call failed:', err instanceof Error ? err.message : err);
+      console.warn('Narrate step: LLM text call failed:', err instanceof Error ? err.message : err);
     }
 
     // Attempt 3: deterministic fallback from raw data
@@ -125,23 +123,19 @@ const publishStep = createStep({
     let notionPageUrl = '';
     let diagramUrl = 'N/A';
 
-    // 1. Excalidraw diagram (best-effort)
+    // 1. Excalidraw diagram (best-effort) — official excalidraw-mcp
     try {
       const { getExcalidrawToolsets } = await import('../tools/excalidraw-mcp.tool.js');
       const toolsets = await getExcalidrawToolsets();
       const tools = Object.values(toolsets).reduce((acc, ts) => ({ ...acc, ...ts }), {} as Record<string, any>);
 
-      if (tools['clear_canvas']) {
-        await tools['clear_canvas'].execute({ random: 'clear' });
-        console.log('Publish: Excalidraw canvas cleared');
+      if (tools['create_view'] && inputData.diagram?.elements?.length) {
+        await tools['create_view'].execute({ elements: inputData.diagram.elements });
+        console.log('Publish: Diagram view created');
       }
-      if (tools['batch_create_elements'] && inputData.diagram?.elements?.length) {
-        await tools['batch_create_elements'].execute({ elements: inputData.diagram.elements });
-        console.log('Publish: Diagram elements created');
-      }
-      if (tools['export_canvas']) {
-        const exportResult = await tools['export_canvas'].execute({});
-        diagramUrl = (exportResult as any)?.url ?? 'N/A';
+      if (tools['export_to_excalidraw']) {
+        const exportResult = await tools['export_to_excalidraw'].execute({});
+        diagramUrl = (exportResult as any)?.url ?? (exportResult as any)?.content?.[0]?.text ?? 'N/A';
         console.log('Publish: Diagram exported:', diagramUrl);
       }
     } catch (err) {
@@ -164,12 +158,19 @@ const publishStep = createStep({
       console.log('Publish: Created Notion page:', notionPageUrl);
     }
 
-    // 3. Build full markdown with diagram embed
-    let fullMarkdown = blog.content;
+    // 3. Build rich markdown
+    const now = new Date().toISOString().split('T')[0];
+    let fullMarkdown = `# ${blog.headline}\n\n`;
+    fullMarkdown += `> ${blog.tldr}\n\n`;
+
     if (diagramUrl !== 'N/A') {
-      fullMarkdown = `![${inputData.diagram?.title ?? 'Weekly Diagram'}](${diagramUrl})\n\n${fullMarkdown}`;
+      fullMarkdown += `![${inputData.diagram?.title ?? 'Weekly Diagram'}](${diagramUrl})\n\n`;
     }
-    fullMarkdown += `\n\n---\n*Tags: ${blog.tags.join(', ')}* · *${blog.readingTimeMinutes} min read*`;
+
+    fullMarkdown += blog.content;
+    fullMarkdown += `\n\n---\n\n`;
+    fullMarkdown += blog.tags.map((t) => `#${t}`).join(' ');
+    fullMarkdown += ` · ${blog.readingTimeMinutes} min read · Generated ${now} by [GitPulse](https://github.com/yashksaini-coder/GitPulse)`;
 
     // 4. Write markdown to page
     await writeNotionMarkdown(pageId, fullMarkdown);

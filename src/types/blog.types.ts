@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const ExcalidrawElementSchema = z.object({
-  type: z.enum(['rectangle', 'arrow', 'text', 'ellipse']),
+  type: z.enum(['rectangle', 'arrow', 'text', 'ellipse', 'line', 'diamond']),
   x: z.coerce.number(),
   y: z.coerce.number(),
   width: z.coerce.number().default(160),
@@ -18,7 +18,7 @@ export const NarratorOutputSchema = z.object({
     tldr: z.string().transform((s) => s.slice(0, 300)),
     content: z.string(),
     tags: z.array(z.string()).default([]),
-    readingTimeMinutes: z.coerce.number().default(2),
+    readingTimeMinutes: z.coerce.number().min(1).max(20).default(2),
   }).passthrough(),
   diagram: z.object({
     title: z.string(),
