@@ -26,10 +26,9 @@ const EnvSchema = z.object({
     }),
 
   // Optional with defaults
-  EXCALIDRAW_MCP_URL: z.string().url().default('https://mcp.excalidraw.com'),
+
   BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('professional'),
   AUTO_PUBLISH: z.coerce.boolean().default(true),
-  DIAGRAM_STYLE: z.enum(['sketch', 'clean', 'minimal']).default('sketch'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 

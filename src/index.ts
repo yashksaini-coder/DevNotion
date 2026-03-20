@@ -12,7 +12,6 @@ async function runWeeklyDispatch(weekStart?: string) {
 
   if (result.status === 'success') {
     console.log(`Published: ${result.result?.notionPageUrl}`);
-    console.log(`Diagram: ${result.result?.diagramUrl}`);
   } else {
     console.error('Workflow failed:', result.status);
     if ('error' in result) {
