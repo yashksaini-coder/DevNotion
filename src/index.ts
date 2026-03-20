@@ -1,4 +1,4 @@
-import { mastra } from './mastra.js';
+import { mastra } from './mastra/index.js';
 import cron from 'node-cron';
 import { getLastMonday } from './utils/dates.js';
 
