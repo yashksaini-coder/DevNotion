@@ -1,15 +1,17 @@
 import { z } from 'zod';
 
+// Permissive schema — core fields validated, rest passes through for rich Excalidraw format.
+// The narrator instructions define the full element format (ids, label objects, roundness,
+// arrow bindings, cameraUpdate, etc.) and .passthrough() preserves all extra properties.
 export const ExcalidrawElementSchema = z.object({
-  type: z.enum(['rectangle', 'arrow', 'text', 'ellipse', 'line', 'diamond']),
-  x: z.coerce.number(),
-  y: z.coerce.number(),
-  width: z.coerce.number().default(160),
-  height: z.coerce.number().default(80),
-  label: z.string().optional(),
+  type: z.enum(['rectangle', 'arrow', 'text', 'ellipse', 'line', 'diamond', 'cameraUpdate']),
+  id: z.string().optional(),
+  x: z.coerce.number().optional(),
+  y: z.coerce.number().optional(),
+  width: z.coerce.number().optional(),
+  height: z.coerce.number().optional(),
   strokeColor: z.string().optional(),
   backgroundColor: z.string().optional(),
-  points: z.array(z.array(z.coerce.number()).min(2).max(2)).optional(),
 }).passthrough();
 
 export const NarratorOutputSchema = z.object({

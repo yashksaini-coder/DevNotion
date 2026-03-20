@@ -15,9 +15,19 @@ const harvestStep = createStep({
   },
 });
 
+/** Map language name to Excalidraw fill color. */
+function langColor(lang: string | null | undefined): string {
+  if (!lang) return '#d0bfff';
+  const l = lang.toLowerCase();
+  if (l.includes('typescript') || l.includes('javascript')) return '#a5d8ff';
+  if (l.includes('python')) return '#b2f2bb';
+  if (l.includes('rust') || l.includes('go') || l.includes('c++') || l.includes('c#')) return '#ffd8a8';
+  return '#d0bfff';
+}
+
 /**
  * Build a deterministic fallback NarratorOutput from raw GitHub data.
- * Used when the LLM fails to produce valid JSON after retries.
+ * Uses rich Excalidraw element format: ids, label objects, roundness, arrow bindings, cameraUpdate.
  */
 function buildFallbackNarration(data: WeeklyData): NarratorOutput {
   const repoList = data.repos.map((r) => `- **${r.name}**: ${r.commits} commits (${r.language ?? 'unknown'})`).join('\n');
@@ -36,23 +46,75 @@ ${prList}
 Top languages: ${Object.entries(data.languages).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([l]) => l).join(', ')}.
 `;
 
-  const elements: NarratorOutput['diagram']['elements'] = data.repos.slice(0, 10).map((repo, i) => ({
-    type: 'rectangle' as const,
-    x: 60 + (i % 5) * 220,
-    y: i < 5 ? 200 : 350,
-    width: 160,
-    height: 80,
-    label: `${repo.name}\n${repo.commits} commits`,
-    backgroundColor: '#a5d8ff',
-  }));
+  // Build rich Excalidraw elements
+  const elements: Record<string, unknown>[] = [];
 
+  // Camera
+  elements.push({ type: 'cameraUpdate', width: 800, height: 600, x: 0, y: 0 });
+
+  // Title
   elements.push({
-    type: 'text' as const,
-    x: 200,
-    y: 50,
-    width: 400,
-    height: 30,
-    label: `Week of ${data.weekStart}`,
+    type: 'text', id: 'title', x: 150, y: 20,
+    text: `Week of ${data.weekStart}`, fontSize: 24, strokeColor: '#1e1e1e',
+  });
+
+  // Repo boxes with language labels
+  const repos = data.repos.slice(0, 10);
+  repos.forEach((repo, i) => {
+    const col = i % 5;
+    const row = Math.floor(i / 5);
+    const x = 60 + col * 150;
+    const y = 120 + row * 140;
+    const w = Math.min(220, Math.max(140, repo.commits * 15 + 120));
+
+    elements.push({
+      type: 'rectangle', id: `repo-${i}`,
+      x, y, width: w, height: 80,
+      roundness: { type: 3 },
+      backgroundColor: langColor(repo.language),
+      fillStyle: 'solid',
+      label: { text: `${repo.name}\n${repo.commits} commits`, fontSize: 16 },
+    });
+
+    if (repo.language) {
+      elements.push({
+        type: 'text', id: `lang-${i}`,
+        x: x + 10, y: y - 22,
+        text: repo.language, fontSize: 14, strokeColor: '#495057',
+      });
+    }
+  });
+
+  // PR arrows from their repo box
+  data.pullRequests.slice(0, 8).forEach((pr, i) => {
+    const repoIdx = repos.findIndex((r) => r.name === pr.repo);
+    if (repoIdx < 0) return;
+    const col = repoIdx % 5;
+    const row = Math.floor(repoIdx / 5);
+    const rx = 60 + col * 150;
+    const ry = 120 + row * 140;
+    const rw = Math.min(220, Math.max(140, repos[repoIdx]!.commits * 15 + 120));
+    const prColor = pr.state === 'MERGED' ? '#40c057' : pr.state === 'OPEN' ? '#fab005' : '#fa5252';
+
+    elements.push({
+      type: 'arrow', id: `pr-${i}`,
+      x: rx + rw, y: ry + 30 + (i % 3) * 15,
+      width: 80, height: 0,
+      points: [[0, 0], [80, 0]],
+      endArrowhead: 'arrow',
+      strokeColor: prColor, strokeWidth: 2,
+      startBinding: { elementId: `repo-${repoIdx}`, fixedPoint: [1, 0.5] },
+      label: { text: pr.title.slice(0, 25), fontSize: 14 },
+    });
+  });
+
+  // Metrics footer
+  const lastRowY = repos.length > 5 ? 120 + 140 + 80 : 120 + 80;
+  elements.push({
+    type: 'text', id: 'footer',
+    x: 100, y: lastRowY + 40,
+    text: `${data.totalCommits} commits · ${data.totalPRs} PRs · +${data.totalAdditions} / -${data.totalDeletions} lines`,
+    fontSize: 16, strokeColor: '#868e96',
   });
 
   return {
@@ -65,7 +127,7 @@ Top languages: ${Object.entries(data.languages).sort((a, b) => b[1] - a[1]).slic
     },
     diagram: {
       title: `Weekly Contributions — ${data.weekStart}`,
-      elements,
+      elements: elements as NarratorOutput['diagram']['elements'],
     },
   };
 }
@@ -78,11 +140,16 @@ const narrateStep = createStep({
     const agent = mastra!.getAgent('narrator-agent');
     const prompt = `Generate a blog post and diagram from this GitHub contribution data:\n\n${JSON.stringify(inputData, null, 2)}`;
 
-    // Attempt 1: structured output (Gemini native JSON schema)
+    // Attempt 1: structured output with 45s timeout (Gemini preview can be slow)
     try {
-      const result = await agent.generate(prompt, {
-        structuredOutput: { schema: NarratorOutputSchema },
-      });
+      const result = await Promise.race([
+        agent.generate(prompt, {
+          structuredOutput: { schema: NarratorOutputSchema },
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Structured output timed out after 45s')), 45_000),
+        ),
+      ]);
       if (result.object) {
         console.log('Narrate step: Structured output succeeded');
         return NarratorOutputSchema.parse(result.object);
@@ -129,16 +196,19 @@ const publishStep = createStep({
       const toolsets = await getExcalidrawToolsets();
       const tools = Object.values(toolsets).reduce((acc, ts) => ({ ...acc, ...ts }), {} as Record<string, any>);
 
-      const elements = inputData.diagram?.elements ?? [];
-      if (tools['create_view'] && elements.length) {
-        await tools['create_view'].execute({ elements: JSON.stringify(elements) });
+      // Filter out cameraUpdate pseudo-elements for the export scene (they're rendering-only)
+      const allElements = inputData.diagram?.elements ?? [];
+      const drawableElements = allElements.filter((el) => el.type !== 'cameraUpdate');
+
+      if (tools['create_view'] && allElements.length) {
+        await tools['create_view'].execute({ elements: JSON.stringify(allElements) });
         console.log('Publish: Diagram view created');
       }
-      if (tools['export_to_excalidraw'] && elements.length) {
+      if (tools['export_to_excalidraw'] && drawableElements.length) {
         const sceneJson = JSON.stringify({
           type: 'excalidraw',
           version: 2,
-          elements,
+          elements: drawableElements,
           appState: { viewBackgroundColor: '#ffffff' },
         });
         const exportResult = await tools['export_to_excalidraw'].execute({ json: sceneJson });

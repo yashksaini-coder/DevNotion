@@ -28,7 +28,6 @@ BLOG WRITING RULES
 
 ### Headline Formula
 "Week of {date}: {key achievement} — {stat summary}"
-Example: "Week of 2026-03-16: Launched Auth Module — 47 commits across 5 repos"
 
 ### TLDR Formula
 "{N} commits across {M} repos with +{adds}/-{dels} lines. {Key achievement in one sentence}."
@@ -42,46 +41,88 @@ Estimate ~1 min per 250 words, minimum 2.
 ### Quality Markers
 - Every repo mentioned MUST appear in the input data
 - Every PR referenced MUST have its real title and URL
-- Include actual numbers (commits, lines, PRs) — never approximate when exact data is given
+- Include actual numbers — never approximate when exact data is given
 - Minimum 400 words for content, maximum 1200
 
 ═══════════════════════════════════════
-DIAGRAM LAYOUT RULES
+EXCALIDRAW DIAGRAM FORMAT
 ═══════════════════════════════════════
 
-Design a visual map of the week's contributions as Excalidraw elements.
+Output diagram.elements as an array of Excalidraw element objects. Follow this format EXACTLY.
 
-### Canvas
-- Virtual canvas: 1200×800
-- Title text at top center (x=400, y=40)
-- Metrics footer at bottom (y=700)
+### Required Fields (all elements): type, id (unique string), x, y, width, height
 
-### Repo Boxes (rectangles)
-- Size proportional to commit count: min 120×70, max 200×100
-- Width = clamp(120, commits × 20, 200), Height = clamp(70, commits × 10, 100)
-- Color by primary language:
-  - TypeScript/JavaScript → "#a5d8ff" (blue)
-  - Python → "#b2f2bb" (green)
-  - Rust/Go → "#ffd8a8" (orange)
-  - Other → "#d0bfff" (purple)
-- Arrange in grid: x starts at 60, increment by 220px. First row y=200, second row y=350.
-- Label: "{repoName}\\n{N} commits"
+### Element Types
 
-### Language Labels (text)
-- Small text above each repo box (y = repo.y - 25)
-- Content: primary language name
-- strokeColor: "#495057"
+**cameraUpdate** (MUST be the FIRST element — sets viewport):
+{ "type": "cameraUpdate", "width": 800, "height": 600, "x": 0, "y": 0 }
+Camera MUST use 4:3 ratio. Use 800x600 for standard diagrams, 1200x900 for large ones.
 
-### PR Arrows
-- One arrow per PR, connecting from repo box outward
-- Color by state: MERGED="#40c057", OPEN="#fab005", CLOSED="#fa5252"
-- Label: PR title (truncated to 30 chars)
-- Points: start from repo box right edge, end 100px to the right
+**rectangle** (for repo boxes — use label object, roundness, fillStyle):
+{ "type": "rectangle", "id": "r1", "x": 100, "y": 120, "width": 180, "height": 80,
+  "roundness": { "type": 3 }, "backgroundColor": "#a5d8ff", "fillStyle": "solid",
+  "label": { "text": "my-repo\\n8 commits", "fontSize": 18 } }
 
-### Metrics Footer (text)
-- Position: x=200, y=700
-- Content: "{N} commits · {M} PRs · +{adds} / -{dels} lines"
-- strokeColor: "#868e96"
+**arrow** (for PR connections — use bindings, endArrowhead, label):
+{ "type": "arrow", "id": "a1", "x": 280, "y": 160, "width": 120, "height": 0,
+  "points": [[0,0],[120,0]], "endArrowhead": "arrow", "strokeColor": "#40c057", "strokeWidth": 2,
+  "startBinding": { "elementId": "r1", "fixedPoint": [1, 0.5] },
+  "endBinding": { "elementId": "r2", "fixedPoint": [0, 0.5] },
+  "label": { "text": "feat: auth", "fontSize": 14 } }
+
+**text** (for titles and annotations — use text field, not label):
+{ "type": "text", "id": "t1", "x": 200, "y": 20, "text": "Week of 2026-03-15", "fontSize": 24, "strokeColor": "#1e1e1e" }
+
+**ellipse** / **diamond** — same fields as rectangle (id, x, y, width, height, roundness, label, fill).
+
+### Color Palette
+
+Repo fills (by language):
+- TypeScript/JavaScript → "#a5d8ff" (light blue)
+- Python → "#b2f2bb" (light green)
+- Rust/Go/C → "#ffd8a8" (light orange)
+- Other → "#d0bfff" (light purple)
+
+PR arrow strokes (by state):
+- MERGED → "#40c057" (green)
+- OPEN → "#fab005" (amber)
+- CLOSED → "#fa5252" (red)
+
+Footer/annotation text: strokeColor "#868e96"
+Language label text: strokeColor "#495057"
+
+### Layout Rules
+
+1. **cameraUpdate first**: { "type": "cameraUpdate", "width": 800, "height": 600, "x": 0, "y": 0 }
+2. **Title** at top: y=20, text element with fontSize 24, centered over diagram
+3. **Repo boxes** in a grid:
+   - First row y=120, second row y=260. x starts at 60, increment by 200px.
+   - Width = clamp(140, commits*15 + 120, 220). Height = 80.
+   - Use roundness: { type: 3 }, fillStyle: "solid", backgroundColor by language.
+   - Label as object: { text: "{name}\\n{N} commits", fontSize: 18 }
+4. **Language labels**: text element above each box (y = box.y - 22), fontSize 14
+5. **PR arrows**: Connect repo boxes. Use startBinding/endBinding with fixedPoint.
+   - Right edge to left edge: startBinding fixedPoint [1, 0.5], endBinding fixedPoint [0, 0.5]
+   - If PR connects same repo, arrow goes from right edge and curves back: points [[0,0],[60,-40],[0,-80]]
+   - Label as object: { text: "PR title (≤25 chars)", fontSize: 14 }
+   - For unconnected PRs (no matching target repo), use a short arrow from repo right edge
+6. **Metrics footer**: text element below last row (y = lastRow.y + 120), fontSize 16, strokeColor "#868e96"
+7. **Draw order**: camera → title → (for each repo: box → language label → its PR arrows) → footer
+8. **Font minimums**: 16 for labels, 20 for titles, 14 for annotations only. NEVER below 14.
+9. **Spacing**: minimum 20px gap between elements. Don't overlap.
+
+### Concrete Example (2 repos, 1 merged PR)
+
+[
+  { "type": "cameraUpdate", "width": 800, "height": 600, "x": 0, "y": 0 },
+  { "type": "text", "id": "title", "x": 180, "y": 20, "text": "Week of 2026-03-15", "fontSize": 24, "strokeColor": "#1e1e1e" },
+  { "type": "rectangle", "id": "repo1", "x": 60, "y": 120, "width": 180, "height": 80, "roundness": { "type": 3 }, "backgroundColor": "#a5d8ff", "fillStyle": "solid", "label": { "text": "api-server\\n8 commits", "fontSize": 18 } },
+  { "type": "text", "id": "lang1", "x": 90, "y": 98, "text": "TypeScript", "fontSize": 14, "strokeColor": "#495057" },
+  { "type": "rectangle", "id": "repo2", "x": 360, "y": 120, "width": 160, "height": 80, "roundness": { "type": 3 }, "backgroundColor": "#b2f2bb", "fillStyle": "solid", "label": { "text": "ml-pipeline\\n3 commits", "fontSize": 18 } },
+  { "type": "text", "id": "lang2", "x": 385, "y": 98, "text": "Python", "fontSize": 14, "strokeColor": "#495057" },
+  { "type": "arrow", "id": "pr1", "x": 240, "y": 160, "width": 120, "height": 0, "points": [[0,0],[120,0]], "endArrowhead": "arrow", "strokeColor": "#40c057", "strokeWidth": 2, "startBinding": { "elementId": "repo1", "fixedPoint": [1, 0.5] }, "endBinding": { "elementId": "repo2", "fixedPoint": [0, 0.5] }, "label": { "text": "feat: add auth", "fontSize": 14 } },
+  { "type": "text", "id": "footer", "x": 120, "y": 280, "text": "11 commits · 1 PR · +420 / -30 lines", "fontSize": 16, "strokeColor": "#868e96" }
+]
 
 ═══════════════════════════════════════
 JSON OUTPUT FORMAT
@@ -97,33 +138,9 @@ JSON OUTPUT FORMAT
   },
   "diagram": {
     "title": "string",
-    "elements": [
-      {
-        "type": "rectangle" | "arrow" | "text" | "ellipse" | "line" | "diamond",
-        "x": number,
-        "y": number,
-        "width": number,
-        "height": number,
-        "label": "optional string",
-        "strokeColor": "optional hex color",
-        "backgroundColor": "optional hex color",
-        "points": [[x1,y1],[x2,y2]]
-      }
-    ]
+    "elements": [ ...array of Excalidraw elements as described above... ]
   }
 }
-
-### Good Output Example
-- headline uses real date and real achievement from data
-- content has 5 sections with ### headings
-- tags match actual languages in the data
-- diagram has one rectangle per repo, colored by language, with PR arrows
-
-### Bad Output Example (DO NOT)
-- Generic headline like "Weekly Update"
-- Content that says "various improvements" without specifics
-- Tags that don't match languages in the data
-- Empty diagram elements array
 
 RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`,
 });
