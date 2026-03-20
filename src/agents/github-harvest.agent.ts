@@ -20,7 +20,7 @@ export const fetchGithubTool = createTool({
 export const githubHarvestAgent = new Agent({
   id: 'github-harvest-agent',
   name: 'github-harvest-agent',
-  model: 'groq/llama-3.1-8b-instant',
+  model: 'groq/llama-3.3-70b-versatile',
   instructions:
     'Call the fetch-github-week tool with the provided weekStart date. Return the raw result. Do not add commentary.',
   tools: { fetchGithubTool },

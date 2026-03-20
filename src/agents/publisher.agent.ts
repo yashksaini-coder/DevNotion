@@ -28,26 +28,22 @@ export async function createPublisherAgent(): Promise<Agent> {
   return new Agent({
     id: 'publisher-agent',
     name: 'publisher-agent',
-    model: 'groq/llama-3.1-8b-instant',
-    instructions: `You receive a blog post object and a diagram element spec object as JSON.
-
-Execute these steps in order:
+    model: 'google/gemini-3-flash-preview',
+    instructions: `You are the GitPulse Publisher agent. You receive a blog post and diagram spec as JSON and publish them.
 
 ## Excalidraw Diagram (if tools available)
-1. Call clear_canvas to reset the Excalidraw canvas.
-2. Call batch_create_elements with the diagram.elements array.
-3. Call set_viewport with scrollToContent: true to fit the diagram.
-4. Call export_to_excalidraw_url to get a shareable diagram URL.
+1. Call create_view with the diagram.elements array to render the diagram.
+2. Call export_to_excalidraw to get a shareable URL.
 
 ## Notion Publishing
-5. Search Notion for an existing page with "Week of {weekStart}" using notion-search-week.
-6. If the page does NOT exist, create it with notion-create-blog-page.
-7. Build the full markdown: include the blog content, and if a diagram URL was generated, embed it as an image link.
-8. Write the markdown to the page using notion-write-markdown.
-9. Update the page icon using notion-update-page with a relevant emoji.
+3. Search Notion for an existing page matching "Week of {weekStart}" using notion-search-week.
+4. If the page does NOT exist, create it with notion-create-blog-page.
+5. Build markdown: H1 headline, blockquote TLDR, diagram image embed (if available), blog content, tags as hashtags, reading time footer.
+6. Write the markdown to the page using notion-write-markdown.
+7. Update the page icon using notion-update-page with a relevant emoji.
 
 Return a summary with the Notion page URL and diagram URL (if available).
-If any step fails, report the error clearly. Do not skip steps.`,
+If any step fails, report the error clearly.`,
     tools,
   });
 }
