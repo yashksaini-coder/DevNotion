@@ -13,6 +13,7 @@ const EnvSchema = z.object({
   // Required
   GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required (ghp_ or github_pat_ prefix)'),
   GITHUB_USERNAME: z.string().min(1, 'GITHUB_USERNAME is required'),
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1, 'GOOGLE_GENERATIVE_AI_API_KEY is required (get one at aistudio.google.com)'),
   GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required (get one at console.groq.com)'),
   NOTION_TOKEN: z.string().min(1, 'NOTION_TOKEN is required (Notion Internal Integration)'),
   NOTION_PARENT_PAGE_ID: z
@@ -25,7 +26,7 @@ const EnvSchema = z.object({
     }),
 
   // Optional with defaults
-  EXCALIDRAW_CANVAS_URL: z.string().url().default('http://localhost:3000'),
+  EXCALIDRAW_MCP_URL: z.string().url().default('https://mcp.excalidraw.com'),
   BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('professional'),
   AUTO_PUBLISH: z.coerce.boolean().default(true),
   DIAGRAM_STYLE: z.enum(['sketch', 'clean', 'minimal']).default('sketch'),
