@@ -129,13 +129,20 @@ const publishStep = createStep({
       const toolsets = await getExcalidrawToolsets();
       const tools = Object.values(toolsets).reduce((acc, ts) => ({ ...acc, ...ts }), {} as Record<string, any>);
 
-      if (tools['create_view'] && inputData.diagram?.elements?.length) {
-        await tools['create_view'].execute({ elements: inputData.diagram.elements });
+      const elements = inputData.diagram?.elements ?? [];
+      if (tools['create_view'] && elements.length) {
+        await tools['create_view'].execute({ elements: JSON.stringify(elements) });
         console.log('Publish: Diagram view created');
       }
-      if (tools['export_to_excalidraw']) {
-        const exportResult = await tools['export_to_excalidraw'].execute({});
-        diagramUrl = (exportResult as any)?.url ?? (exportResult as any)?.content?.[0]?.text ?? 'N/A';
+      if (tools['export_to_excalidraw'] && elements.length) {
+        const sceneJson = JSON.stringify({
+          type: 'excalidraw',
+          version: 2,
+          elements,
+          appState: { viewBackgroundColor: '#ffffff' },
+        });
+        const exportResult = await tools['export_to_excalidraw'].execute({ json: sceneJson });
+        diagramUrl = (exportResult as any)?.content?.[0]?.text ?? (exportResult as any)?.url ?? 'N/A';
         console.log('Publish: Diagram exported:', diagramUrl);
       }
     } catch (err) {

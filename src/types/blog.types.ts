@@ -9,7 +9,7 @@ export const ExcalidrawElementSchema = z.object({
   label: z.string().optional(),
   strokeColor: z.string().optional(),
   backgroundColor: z.string().optional(),
-  points: z.array(z.tuple([z.coerce.number(), z.coerce.number()])).optional(),
+  points: z.array(z.array(z.coerce.number()).min(2).max(2)).optional(),
 }).passthrough();
 
 export const NarratorOutputSchema = z.object({
