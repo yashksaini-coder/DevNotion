@@ -9,17 +9,7 @@ function getExcalidrawMCPClient(): MCPClient {
       id: 'excalidraw-mcp',
       servers: {
         excalidraw: {
-          command: 'docker',
-          args: [
-            'run',
-            '-i',
-            '--rm',
-            '-e',
-            `EXPRESS_SERVER_URL=${env.EXCALIDRAW_CANVAS_URL}`,
-            '-e',
-            'ENABLE_CANVAS_SYNC=true',
-            'ghcr.io/yctimlin/mcp_excalidraw:latest',
-          ],
+          url: new URL('/mcp', env.EXCALIDRAW_MCP_URL),
         },
       },
     });

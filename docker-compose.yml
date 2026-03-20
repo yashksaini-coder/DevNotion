@@ -1,13 +1,20 @@
-services:
-  excalidraw-canvas:
-    image: ghcr.io/yctimlin/mcp_excalidraw-canvas:latest
-    ports:
-      - '3000:3000'
-    environment:
-      - NODE_ENV=production
-      - HOST=0.0.0.0
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
-      interval: 10s
-      retries: 3
+# Docker Compose for GitPulse (optional services)
+# The pipeline now uses the official excalidraw-mcp remote server (https://mcp.excalidraw.com)
+# by default, so no local Docker services are required.
+#
+# To use a local Excalidraw canvas for preview/development, uncomment below
+# and set EXCALIDRAW_MCP_URL=http://localhost:3000 in .env.local
+
+# services:
+#   excalidraw-canvas:
+#     image: ghcr.io/yctimlin/mcp_excalidraw-canvas:latest
+#     ports:
+#       - '3000:3000'
+#     environment:
+#       - NODE_ENV=production
+#       - HOST=0.0.0.0
+#     restart: unless-stopped
+#     healthcheck:
+#       test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+#       interval: 10s
+#       retries: 3
