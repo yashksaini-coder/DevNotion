@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { WeeklyDataSchema, type WeeklyData } from '../types/github.types.js';
 import { NarratorOutputSchema, type NarratorOutput } from '../types/blog.types.js';
 import { fetchWeeklyContributions } from '../tools/github.tool.js';
-import { parseLLMResponse } from '../utils/parse-llm-json.js';
+import { parseFrontmatter } from '../utils/parse-frontmatter.js';
 
 const harvestStep = createStep({
   id: 'harvest-github',
@@ -64,47 +64,23 @@ const narrateStep = createStep({
   outputSchema: NarratorOutputSchema,
   execute: async ({ inputData, mastra }) => {
     const agent = mastra!.getAgent('narrator-agent');
-    const prompt = `Generate a blog post from this GitHub contribution data:\n\n${JSON.stringify(inputData, null, 2)}`;
+    const dataJson = JSON.stringify(inputData, null, 2);
+    const prompt = `Generate a blog post from this GitHub contribution data:\n\n${dataJson}`;
 
-    // Attempt 1: structured output with 90s timeout (pro models need more time for long-form writing)
-    const abort = new AbortController();
-    try {
-      const timer = setTimeout(() => abort.abort(), 90_000);
-      const result = await Promise.race([
-        agent.generate(prompt, {
-          structuredOutput: { schema: NarratorOutputSchema },
-          abortSignal: abort.signal,
-        }),
-        new Promise<never>((_, reject) => {
-          abort.signal.addEventListener('abort', () =>
-            reject(new Error('Structured output timed out after 90s')),
-          );
-        }),
-      ]);
-      clearTimeout(timer);
-      if (result.object) {
-        console.log('Narrate step: Structured output succeeded');
-        return NarratorOutputSchema.parse(result.object);
-      }
-    } catch (err) {
-      abort.abort();
-      console.warn('Narrate step: Structured output failed, falling back to text parsing...', err instanceof Error ? err.message : err);
-    }
-
-    // Attempt 2: text generation + JSON parsing
+    // Attempt: plain text generation → parse frontmatter + markdown
     try {
       const result = await agent.generate(prompt);
-      const parsed = parseLLMResponse(result.text, NarratorOutputSchema);
+      const parsed = parseFrontmatter(result.text);
       if (parsed.success) {
-        console.log('Narrate step: Text JSON parsed successfully');
+        console.log('Narrate step: Markdown blog generated successfully');
         return parsed.data;
       }
-      console.warn('Narrate step: LLM returned invalid JSON:', parsed.error);
+      console.warn('Narrate step: Failed to parse frontmatter:', parsed.error);
     } catch (err) {
-      console.warn('Narrate step: LLM text call failed:', err instanceof Error ? err.message : err);
+      console.warn('Narrate step: LLM call failed:', err instanceof Error ? err.message : err);
     }
 
-    // Attempt 3: deterministic fallback from raw data
+    // Fallback: deterministic blog from raw data
     console.log('Narrate step: Using deterministic fallback');
     return buildFallbackNarration(inputData);
   },
