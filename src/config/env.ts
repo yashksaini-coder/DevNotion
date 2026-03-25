@@ -13,8 +13,10 @@ const EnvSchema = z.object({
   // Required
   GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required (ghp_ or github_pat_ prefix)'),
   GITHUB_USERNAME: z.string().min(1, 'GITHUB_USERNAME is required'),
-  GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1, 'GOOGLE_GENERATIVE_AI_API_KEY is required (get one at aistudio.google.com)'),
-  GROQ_API_KEY: z.string().optional(),
+  GOOGLE_API_KEYS: z
+    .string()
+    .min(1, 'GOOGLE_API_KEYS is required (comma-separated Google AI API keys)')
+    .transform((val) => val.split(',').map((k) => k.trim()).filter(Boolean)),
   NOTION_TOKEN: z.string().min(1, 'NOTION_TOKEN is required (Notion Internal Integration)'),
   NOTION_PARENT_PAGE_ID: z
     .string()
@@ -25,9 +27,9 @@ const EnvSchema = z.object({
       return match ? match[1] : val;
     }),
 
-  // Optional with defaults
-  GEMINI_MODEL: z.string().default('gemini-3-flash-preview'),
-  NARRATOR_MODEL: z.string().default('gemini-3-pro-preview'),
+  // Model config — all Gemini, key rotation handles rate limits
+  NARRATOR_MODEL: z.string().default('gemini-3-flash-preview'),
+  UTILITY_MODEL: z.string().default('gemini-3-flash-preview'),
   BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('professional'),
   AUTO_PUBLISH: z.coerce.boolean().default(true),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
