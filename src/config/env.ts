@@ -27,6 +27,7 @@ const EnvSchema = z.object({
 
   // Optional with defaults
   GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  NARRATOR_MODEL: z.string().default('gemini-2.5-pro'),
   BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('professional'),
   AUTO_PUBLISH: z.coerce.boolean().default(true),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),

@@ -66,10 +66,10 @@ const narrateStep = createStep({
     const agent = mastra!.getAgent('narrator-agent');
     const prompt = `Generate a blog post from this GitHub contribution data:\n\n${JSON.stringify(inputData, null, 2)}`;
 
-    // Attempt 1: structured output with 45s timeout (Gemini preview can be slow)
+    // Attempt 1: structured output with 90s timeout (pro models need more time for long-form writing)
     const abort = new AbortController();
     try {
-      const timer = setTimeout(() => abort.abort(), 45_000);
+      const timer = setTimeout(() => abort.abort(), 90_000);
       const result = await Promise.race([
         agent.generate(prompt, {
           structuredOutput: { schema: NarratorOutputSchema },
@@ -77,7 +77,7 @@ const narrateStep = createStep({
         }),
         new Promise<never>((_, reject) => {
           abort.signal.addEventListener('abort', () =>
-            reject(new Error('Structured output timed out after 45s')),
+            reject(new Error('Structured output timed out after 90s')),
           );
         }),
       ]);

@@ -45,8 +45,9 @@ NOTION_TOKEN=ntn_your_token
 NOTION_PARENT_PAGE_ID=your_page_id_or_url
 
 # Optional
-GEMINI_MODEL=gemini-2.5-flash  # default; see "Model Selection" below
-BLOG_TONE=professional         # professional | casual | technical | storytelling
+GEMINI_MODEL=gemini-2.5-flash    # utility agents (harvest, publisher)
+NARRATOR_MODEL=gemini-2.5-pro   # narrator agent — best writing quality
+BLOG_TONE=professional           # professional | casual | technical | storytelling
 AUTO_PUBLISH=true
 LOG_LEVEL=info
 ```
@@ -113,15 +114,20 @@ This ensures a blog post is always generated, even if the LLM is unavailable.
 
 ## Model Selection
 
-Set `GEMINI_MODEL` in `.env.local` to control which Gemini model all agents use. The default is `gemini-2.5-flash` which balances quality and free-tier quota.
+DevNotion uses two separate model configs — a powerful model for the narrator (writing quality matters) and a fast model for utility agents (harvest + publisher just call tools).
 
-| Model | Free Tier (RPD) | Free Tier (RPM) | Best For |
-|-------|----------------|-----------------|----------|
-| `gemini-2.0-flash` | 1,500 | 15 | Highest free quota, fast |
-| `gemini-2.5-flash` | 500 | 10 | Good balance (default) |
-| `gemini-3-flash-preview` | 20 | 5 | Latest features, low quota |
+| Env Var | Default | Used By | Why |
+|---------|---------|---------|-----|
+| `NARRATOR_MODEL` | `gemini-2.5-pro` | Narrator agent | Best writing quality for long-form blog posts |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | Harvest + Publisher | Fast, cheap, only doing tool calls |
 
-RPD = requests per day, RPM = requests per minute. Each pipeline run uses 2-3 requests (structured output attempt + fallback). With `gemini-2.5-flash` you get ~200 pipeline runs/day on the free tier.
+**For weekly runs, free tier is more than enough.** A single pipeline run uses 2-3 API calls. Even the lowest free tier (20 RPD) supports weekly use easily.
+
+| Model | Free RPD | Best For |
+|-------|----------|----------|
+| `gemini-2.5-pro` | 50 | Highest writing quality (narrator default) |
+| `gemini-2.5-flash` | 500 | Fast utility work (harvest/publisher default) |
+| `gemini-2.0-flash` | 1,500 | Maximum quota if rate-limited |
 
 ## Blog Tone Profiles
 
