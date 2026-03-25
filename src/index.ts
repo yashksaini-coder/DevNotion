@@ -4,7 +4,7 @@ import { getLastMonday } from './utils/dates.js';
 
 async function runWeeklyDispatch(weekStart?: string) {
   const week = weekStart ?? getLastMonday();
-  console.log(`Starting GitPulse for week of ${week}...`);
+  console.log(`Starting DevNotion for week of ${week}...`);
 
   const workflow = mastra.getWorkflow('weekly-dispatch');
   const run = await workflow.createRun();
@@ -23,6 +23,7 @@ async function runWeeklyDispatch(weekStart?: string) {
         console.error(`  Step "${stepId}": ${stepResult?.status}`, stepResult?.output ?? stepResult?.error ?? '');
       }
     }
+    process.exit(1);
   }
 }
 
@@ -30,11 +31,14 @@ async function runWeeklyDispatch(weekStart?: string) {
 const weekArg = process.argv.find((a) => a.startsWith('--week='))?.split('=')[1];
 
 if (weekArg || process.argv.includes('--now')) {
-  runWeeklyDispatch(weekArg).catch(console.error);
+  runWeeklyDispatch(weekArg).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 } else {
   // Weekly cron: every Sunday at 08:00 local time
   cron.schedule('0 8 * * 0', () => {
     runWeeklyDispatch().catch(console.error);
   });
-  console.log('GitPulse cron started. Runs every Sunday at 08:00.');
+  console.log('DevNotion cron started. Runs every Sunday at 08:00.');
 }

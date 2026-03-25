@@ -50,7 +50,6 @@ export const createNotionPageTool = createTool({
   description: 'Create a new blog post page in Notion under the parent page',
   inputSchema: z.object({
     title: z.string().describe('Page title, e.g. "Week of March 16-22, 2026 · 12 commits · 3 PRs"'),
-    weekStart: z.string().describe('ISO date of week start'),
   }),
   outputSchema: z.object({
     pageId: z.string(),
@@ -69,7 +68,7 @@ export const createNotionPageTool = createTool({
     );
     return {
       pageId: page.id,
-      pageUrl: (page as any).url ?? `https://notion.so/${page.id.replace(/-/g, '')}`,
+      pageUrl: 'url' in page ? String(page.url) : `https://notion.so/${page.id.replace(/-/g, '')}`,
     };
   },
 });
@@ -126,7 +125,7 @@ export async function createNotionPage(title: string) {
       properties: { title: { title: [{ text: { content: title } }] } },
     }),
   );
-  return { pageId: page.id, pageUrl: (page as any).url ?? `https://notion.so/${page.id.replace(/-/g, '')}` };
+  return { pageId: page.id, pageUrl: 'url' in page ? String(page.url) : `https://notion.so/${page.id.replace(/-/g, '')}` };
 }
 
 export async function writeNotionMarkdown(pageId: string, markdown: string) {

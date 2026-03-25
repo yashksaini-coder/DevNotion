@@ -1,7 +1,7 @@
 {
-  "name": "gitpulse",
+  "name": "devnotion",
   "version": "1.0.0",
-  "description": "3-agent pipeline: GitHub contributions → blog + diagram → Notion",
+  "description": "4-agent pipeline: GitHub contributions → blog + cover image → Notion",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -16,9 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.0",
-    "@ai-sdk/groq": "^1.2.0",
     "@mastra/core": "^1.15.0",
-
     "@notionhq/client": "^2.3.0",
     "dotenv": "^16.4.1",
     "graphql-request": "^6.1.0",
@@ -37,5 +35,10 @@
     "tsup": "^8.0.2",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "zod": "$zod"
+    }
   }
 }

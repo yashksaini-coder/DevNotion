@@ -10,7 +10,7 @@ export const publisherAgent = new Agent({
   id: 'publisher-agent',
   name: 'publisher-agent',
   model: 'google/gemini-3-flash-preview',
-  instructions: `You are the GitPulse Publisher agent. You receive a blog post as JSON and publish it to Notion.
+  instructions: `You are the DevNotion Publisher agent. You receive a blog post as JSON and publish it to Notion.
 
 ## Notion Publishing
 1. Search Notion for an existing page matching "Week of {weekStart}" using notion-search-week.

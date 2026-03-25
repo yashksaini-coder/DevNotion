@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  zod: ^3.25.0
+
 importers:
 
   .:
@@ -11,9 +14,6 @@ importers:
       '@ai-sdk/google':
         specifier: ^1.2.0
         version: 1.2.22(zod@3.25.76)
-      '@ai-sdk/groq':
-        specifier: ^1.2.0
-        version: 1.2.9(zod@3.25.76)
       '@mastra/core':
         specifier: ^1.15.0
         version: 1.15.0(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(quansync@0.2.11)(zod-to-json-schema@3.25.1(zod@3.25.76))(zod@3.25.76))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(quansync@0.2.11)(zod-to-json-schema@3.25.1(zod@3.25.76))(zod@3.25.76))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(zod@3.25.76))(@types/json-schema@7.0.15)(openapi-types@12.1.3)(zod@3.25.76)
@@ -77,31 +77,25 @@ packages:
     resolution: {integrity: sha512-Ppxu3DIieF1G9pyQ5O1Z646GYR0gkC57YdBqXJ82qvCdhEhZHu0TWhmnOoeIWe2olSbuDeoOY+MfJrW8dzS3Hw==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.0.0
-
-  '@ai-sdk/groq@1.2.9':
-    resolution: {integrity: sha512-7MoDaxm8yWtiRbD1LipYZG0kBl+Xe0sv/EeyxnHnGPZappXdlgtdOgTZVjjXkT3nWP30jjZi9A45zoVrBMb3Xg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.0.0
+      zod: ^3.25.0
 
   '@ai-sdk/provider-utils@2.2.8':
     resolution: {integrity: sha512-fqhG+4sCVv8x7nFzYnFo19ryhAa3w096Kmc3hWxMQfW/TubPOmt3A6tYZhl4mUfQWWQMsuSkLrtjlWuXBVSGQA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.23.8
+      zod: ^3.25.0
 
   '@ai-sdk/provider-utils@3.0.20':
     resolution: {integrity: sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
+      zod: ^3.25.0
 
   '@ai-sdk/provider-utils@4.0.0':
     resolution: {integrity: sha512-HyCyOls9I3a3e38+gtvOJOEjuw9KRcvbBnCL5GBuSmJvS9Jh9v3fz7pRC6ha1EUo/ZH1zwvLWYXBMtic8MTguA==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
+      zod: ^3.25.0
 
   '@ai-sdk/provider@1.1.3':
     resolution: {integrity: sha512-qZMxYJ0qqX/RfnuIaab+zp8UAeJn/ygXXAffR5I4N0n1IrvA6qBsjc8hXLmBiMV2zoXlifkacF7sEFnYnjBcqg==}
@@ -123,7 +117,7 @@ packages:
     resolution: {integrity: sha512-3zcwCc8ezzFlwp3ZD15wAPjf2Au4s3vAbKsXQVyhxODHcmu0iyPO2Eua6D/vicq/AUm/BAo60r97O6HU+EI0+w==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.23.8
+      zod: ^3.25.0
 
   '@babel/code-frame@7.29.0':
     resolution: {integrity: sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==}
@@ -649,14 +643,14 @@ packages:
     resolution: {integrity: sha512-jg9MzscX304BhYYOFIlf7oVjY4cAT37vLskJeXxBU7F+N9eRZe0IeVTFoWyE4JE2T8CV7aBXlXEkk8ZovfJyZQ==}
     engines: {node: '>=22.13.0'}
     peerDependencies:
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
 
   '@mastra/deployer@1.15.0':
     resolution: {integrity: sha512-d+ePM2wT/PamvWe+VGM2cQpjiU2xCWm5Bi09Pkn3IBNDVBRx1QCPeuraBayZiW1P60Udoz+XfXh0SUcKyR7oZw==}
     engines: {node: '>=22.13.0'}
     peerDependencies:
       '@mastra/core': '>=1.0.0-0 <2.0.0-0'
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
 
   '@mastra/loggers@1.0.3':
     resolution: {integrity: sha512-H0vvQI59b8FRlswf8GOaYVKXr10EizLUJ3OC7Kc9IFAXnNkX8OhUDVXRIxDpLHYsxhilPumVJN/lOcRVmkvocA==}
@@ -668,21 +662,21 @@ packages:
     resolution: {integrity: sha512-mmk1spyn/fi6n/rICeKXKRG8ZjrpUQbf/VESKjSVq+MtbZFDqzbNJ81HI/+dvr5rQf7wZEGrkubzEKSnWrZJ1g==}
     engines: {node: '>=22.13.0'}
     peerDependencies:
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
 
   '@mastra/server@1.15.0':
     resolution: {integrity: sha512-kSJ22MGtUuB/BtDecWOfvB9SsBBqqzz3/11lxuROsyO48rrCfo2tAqEVtY1vIP7JzdFljgcmvActZK6cZgW+cA==}
     engines: {node: '>=22.13.0'}
     peerDependencies:
       '@mastra/core': '>=1.7.1-0 <2.0.0-0'
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
 
   '@modelcontextprotocol/sdk@1.27.1':
     resolution: {integrity: sha512-sr6GbP+4edBwFndLbM60gf07z0FQ79gaExpnsjMGePXqFcSSb7t6iscpjk9DhFhwd+mTEQrzNafGP8/iGGFYaA==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
-      zod: ^3.25 || ^4.0
+      zod: ^3.25.0
     peerDependenciesMeta:
       '@cfworker/json-schema':
         optional: true
@@ -966,7 +960,7 @@ packages:
       sury: ^10.0.0
       typebox: ^1.0.17
       valibot: ^1.1.0
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
       zod-to-json-schema: ^3.24.5
     peerDependenciesMeta:
       '@valibot/to-json-schema':
@@ -997,7 +991,7 @@ packages:
       sury: ^10.0.0
       typebox: ^1.0.0
       valibot: ^1.1.0
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
       zod-openapi: ^4
     peerDependenciesMeta:
       arktype:
@@ -1991,7 +1985,7 @@ packages:
     hasBin: true
     peerDependencies:
       '@mastra/core': '>=1.1.0-0 <2.0.0-0'
-      zod: ^3.25.0 || ^4.0.0
+      zod: ^3.25.0
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -2983,13 +2977,10 @@ packages:
   zod-to-json-schema@3.25.1:
     resolution: {integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==}
     peerDependencies:
-      zod: ^3.25 || ^4
+      zod: ^3.25.0
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
 snapshots:
 
@@ -3005,12 +2996,6 @@ snapshots:
       - supports-color
 
   '@ai-sdk/google@1.2.22(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.3
-      '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
-      zod: 3.25.76
-
-  '@ai-sdk/groq@1.2.9(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 1.1.3
       '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
@@ -5849,12 +5834,10 @@ snapshots:
 
   zod-from-json-schema@0.5.2:
     dependencies:
-      zod: 4.3.6
+      zod: 3.25.76
 
   zod-to-json-schema@3.25.1(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
   zod@3.25.76: {}
-
-  zod@4.3.6: {}
