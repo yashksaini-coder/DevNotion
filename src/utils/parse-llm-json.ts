@@ -20,12 +20,20 @@ export function extractJSON(text: string): unknown {
     return JSON.parse(trimmed);
   } catch { /* fall through */ }
 
-  // 3. Try: find first { ... } block (greedy)
-  const braceMatch = trimmed.match(/\{[\s\S]*\}/);
-  if (braceMatch) {
-    try {
-      return JSON.parse(braceMatch[0]);
-    } catch { /* fall through */ }
+  // 3. Try: find outermost balanced { ... } block
+  const start = trimmed.indexOf('{');
+  if (start !== -1) {
+    let depth = 0;
+    for (let i = start; i < trimmed.length; i++) {
+      if (trimmed[i] === '{') depth++;
+      else if (trimmed[i] === '}') depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(trimmed.slice(start, i + 1));
+        } catch { /* fall through */ }
+        break;
+      }
+    }
   }
 
   throw new Error('Could not extract valid JSON from LLM response');

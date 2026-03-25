@@ -21,15 +21,27 @@ const harvestStep = createStep({
 function buildFallbackNarration(data: WeeklyData): NarratorOutput {
   const repoList = data.repos.map((r) => `- **${r.name}**: ${r.commits} commits (${r.language ?? 'unknown'})`).join('\n');
   const prList = data.pullRequests.map((pr) => `- [${pr.title}](${pr.url}) — ${pr.state}`).join('\n');
+  const issueList = data.issues.map((i) => `- [${i.title}](${i.url}) — ${i.state}`).join('\n');
+  const reviewList = data.reviews.map((r) => `- [${r.prTitle}](${r.prUrl}) — ${r.state}`).join('\n');
+  const discList = data.discussions.map((d) => `- [${d.title}](${d.url}) — ${d.category} (${d.isAnswered ? 'answered' : 'unanswered'})`).join('\n');
 
   const content = `## TL;DR
-${data.totalCommits} commits across ${data.repos.length} repos, ${data.totalPRs} PRs, +${data.totalAdditions}/-${data.totalDeletions} lines.
+${data.totalCommits} commits, ${data.totalPRs} PRs, ${data.totalIssues} issues, ${data.totalReviews} reviews across ${data.repos.length} repos, +${data.totalAdditions}/-${data.totalDeletions} lines.
 
 ## What I Built
 ${repoList}
 
 ## Key Pull Requests
-${prList}
+${prList || '_No PRs this week._'}
+
+## Issues Opened
+${issueList || '_No issues this week._'}
+
+## PR Reviews
+${reviewList || '_No reviews this week._'}
+
+## Discussions
+${discList || '_No discussions this week._'}
 
 ## Tech Highlights
 Top languages: ${Object.entries(data.languages).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([l]) => l).join(', ')}.
@@ -38,7 +50,7 @@ Top languages: ${Object.entries(data.languages).sort((a, b) => b[1] - a[1]).slic
   return {
     blog: {
       headline: `Week of ${data.weekStart}: ${data.totalCommits} commits across ${data.repos.length} repos`,
-      tldr: `${data.totalCommits} commits, ${data.totalPRs} PRs, +${data.totalAdditions}/-${data.totalDeletions} lines.`,
+      tldr: `${data.totalCommits} commits, ${data.totalPRs} PRs, ${data.totalIssues} issues, ${data.totalReviews} reviews, +${data.totalAdditions}/-${data.totalDeletions} lines.`,
       content,
       tags: Object.entries(data.languages).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([l]) => l),
       readingTimeMinutes: 2,
@@ -55,20 +67,27 @@ const narrateStep = createStep({
     const prompt = `Generate a blog post from this GitHub contribution data:\n\n${JSON.stringify(inputData, null, 2)}`;
 
     // Attempt 1: structured output with 45s timeout (Gemini preview can be slow)
+    const abort = new AbortController();
     try {
+      const timer = setTimeout(() => abort.abort(), 45_000);
       const result = await Promise.race([
         agent.generate(prompt, {
           structuredOutput: { schema: NarratorOutputSchema },
+          abortSignal: abort.signal,
         }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Structured output timed out after 45s')), 45_000),
-        ),
+        new Promise<never>((_, reject) => {
+          abort.signal.addEventListener('abort', () =>
+            reject(new Error('Structured output timed out after 45s')),
+          );
+        }),
       ]);
+      clearTimeout(timer);
       if (result.object) {
         console.log('Narrate step: Structured output succeeded');
         return NarratorOutputSchema.parse(result.object);
       }
     } catch (err) {
+      abort.abort();
       console.warn('Narrate step: Structured output failed, falling back to text parsing...', err instanceof Error ? err.message : err);
     }
 
@@ -87,7 +106,7 @@ const narrateStep = createStep({
 
     // Attempt 3: deterministic fallback from raw data
     console.log('Narrate step: Using deterministic fallback');
-    return buildFallbackNarration(inputData as WeeklyData);
+    return buildFallbackNarration(inputData);
   },
 });
 
@@ -98,25 +117,14 @@ const publishStep = createStep({
     notionPageUrl: z.string(),
   }),
   execute: async ({ inputData }) => {
-    const { searchNotion, createNotionPage, writeNotionMarkdown, updateNotionPage } = await import('../tools/notion-rest.tool.js');
+    const { createNotionPage, writeNotionMarkdown, updateNotionPage } = await import('../tools/notion-rest.tool.js');
     const blog = inputData.blog;
 
-    // 1. Search Notion for existing page
-    const weekTitle = `Week of ${blog.headline.match(/\d{4}-\d{2}-\d{2}/) ?? 'current'}`;
-    const searchResult = await searchNotion(weekTitle);
-
-    let pageId: string;
-    let notionPageUrl: string;
-    if (searchResult.exists && searchResult.pageId) {
-      pageId = searchResult.pageId;
-      notionPageUrl = searchResult.pageUrl ?? '';
-      console.log('Publish: Found existing Notion page:', notionPageUrl);
-    } else {
-      const createResult = await createNotionPage(blog.headline);
-      pageId = createResult.pageId;
-      notionPageUrl = createResult.pageUrl;
-      console.log('Publish: Created Notion page:', notionPageUrl);
-    }
+    // Always create a new page — never overwrite previous reports
+    const createResult = await createNotionPage(blog.headline);
+    const pageId = createResult.pageId;
+    const notionPageUrl = createResult.pageUrl;
+    console.log('Publish: Created Notion page:', notionPageUrl);
 
     // 2. Build rich markdown
     const now = new Date().toISOString().split('T')[0];
@@ -125,7 +133,7 @@ const publishStep = createStep({
     fullMarkdown += blog.content;
     fullMarkdown += `\n\n---\n\n`;
     fullMarkdown += blog.tags.map((t) => `#${t}`).join(' ');
-    fullMarkdown += ` · ${blog.readingTimeMinutes} min read · Generated ${now} by [GitPulse](https://github.com/yashksaini-coder/GitPulse)`;
+    fullMarkdown += ` · ${blog.readingTimeMinutes} min read · Generated ${now} by [DevNotion](https://github.com/yashksaini-coder/DevNotion)`;
 
     // 3. Write markdown to page
     await writeNotionMarkdown(pageId, fullMarkdown);
