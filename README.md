@@ -46,7 +46,7 @@ NOTION_PARENT_PAGE_ID=your_page_id_or_url
 
 # Optional
 GEMINI_MODEL=gemini-3-flash-preview    # utility agents (harvest, publisher)
-NARRATOR_MODEL=gemini-3-pro-preview   # narrator agent — best writing quality
+NARRATOR_MODEL=gemini-3.1-pro-preview   # narrator agent — best writing quality
 BLOG_TONE=professional           # professional | casual | technical | storytelling
 AUTO_PUBLISH=true
 LOG_LEVEL=info
@@ -118,14 +118,14 @@ DevNotion uses two separate model configs — a powerful model for the narrator 
 
 | Env Var | Default | Used By | Why |
 |---------|---------|---------|-----|
-| `NARRATOR_MODEL` | `gemini-3-pro-preview` | Narrator agent | Best writing quality for long-form blog posts |
+| `NARRATOR_MODEL` | `gemini-3.1-pro-preview` | Narrator agent | Best writing quality for long-form blog posts |
 | `GEMINI_MODEL` | `gemini-3-flash-preview` | Harvest + Publisher | Fast, only doing tool calls |
 
 **For weekly runs, free tier is more than enough.** A single pipeline run uses 2-3 API calls. Even the lowest free tier (20 RPD) supports weekly use easily.
 
 | Model | Free RPD | Best For |
 |-------|----------|----------|
-| `gemini-3-pro-preview` | 25 | Best writing quality (narrator default) |
+| `gemini-3.1-pro-preview` | 25 | Best writing quality (narrator default) |
 | `gemini-3-flash-preview` | 500 | Fast utility work (harvest/publisher default) |
 | `gemini-2.5-pro` | 50 | Fallback if Gemini 3 quota is hit |
 | `gemini-2.5-flash` | 500 | High-quota fallback |
