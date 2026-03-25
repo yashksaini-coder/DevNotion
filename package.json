@@ -15,7 +15,7 @@
     "playground": "mastra dev"
   },
   "dependencies": {
-    "@ai-sdk/google": "^1.2.0",
+    "@ai-sdk/google": "^3.0.53",
     "@mastra/core": "^1.15.0",
     "@notionhq/client": "^2.3.0",
     "dotenv": "^16.4.1",
