@@ -13,6 +13,7 @@ const WEEKLY_CONTRIBUTIONS_QUERY = gql`
         totalCommitContributions
         totalPullRequestContributions
         totalPullRequestReviewContributions
+        totalIssueContributions
         contributionCalendar {
           totalContributions
           weeks {
@@ -50,6 +51,40 @@ const WEEKLY_CONTRIBUTIONS_QUERY = gql`
               }
             }
           }
+        }
+        issueContributions(last: 30) {
+          nodes {
+            issue {
+              title
+              url
+              state
+              createdAt
+              repository { name }
+            }
+          }
+        }
+        pullRequestReviewContributions(last: 30) {
+          nodes {
+            pullRequestReview {
+              state
+              submittedAt
+            }
+            pullRequest {
+              title
+              url
+              repository { name }
+            }
+          }
+        }
+      }
+      repositoryDiscussions(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
+        nodes {
+          title
+          url
+          createdAt
+          isAnswered
+          category { name }
+          repository { name }
         }
       }
       repositories(first: 100, orderBy: { field: PUSHED_AT, direction: DESC }) {
@@ -153,6 +188,39 @@ export function transformGitHubResponse(
     else break;
   }
 
+  // Build issues array
+  const issues = (cc.issueContributions?.nodes ?? []).map((n: any) => ({
+    title: n.issue.title,
+    url: n.issue.url,
+    repo: n.issue.repository.name,
+    state: n.issue.state as 'OPEN' | 'CLOSED',
+    createdAt: n.issue.createdAt,
+  }));
+
+  // Build reviews array
+  const reviews = (cc.pullRequestReviewContributions?.nodes ?? []).map((n: any) => ({
+    prTitle: n.pullRequest.title,
+    prUrl: n.pullRequest.url,
+    repo: n.pullRequest.repository.name,
+    state: n.pullRequestReview.state,
+    submittedAt: n.pullRequestReview.submittedAt,
+  }));
+
+  // Build discussions array (filter by date range since they come from user-level, not contributionsCollection)
+  const discussions = (data.user.repositoryDiscussions?.nodes ?? [])
+    .filter((n: any) => {
+      const created = new Date(n.createdAt);
+      return created >= from && created < to;
+    })
+    .map((n: any) => ({
+      title: n.title,
+      url: n.url,
+      repo: n.repository.name,
+      category: n.category?.name ?? 'General',
+      isAnswered: n.isAnswered ?? false,
+      createdAt: n.createdAt,
+    }));
+
   const totalAdditions = pullRequests.reduce(
     (s: number, pr: any) => s + pr.additions,
     0,
@@ -169,10 +237,16 @@ export function transformGitHubResponse(
     totalPRs: cc.totalPullRequestContributions,
     totalAdditions,
     totalDeletions,
+    totalIssues: cc.totalIssueContributions ?? issues.length,
+    totalReviews: reviews.length,
+    totalDiscussions: discussions.length,
     repos,
     pullRequests,
+    issues,
+    reviews,
+    discussions,
     languages,
-    reviewsGiven: cc.totalPullRequestReviewContributions,
+    reviewsGiven: reviews.length,
     streakDays: streak,
   };
 }
