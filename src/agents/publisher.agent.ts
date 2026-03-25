@@ -1,5 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { env } from '../config/env.js';
+import { createGoogleModel } from '../config/providers.js';
 import {
   createNotionPageTool,
   writeMarkdownTool,
@@ -10,7 +11,7 @@ import {
 export const publisherAgent = new Agent({
   id: 'publisher-agent',
   name: 'publisher-agent',
-  model: `google/${env.GEMINI_MODEL}`,
+  model: createGoogleModel(env.UTILITY_MODEL),
   instructions: `You are the DevNotion Publisher agent. You receive a blog post as JSON and publish it to Notion.
 
 ## Notion Publishing

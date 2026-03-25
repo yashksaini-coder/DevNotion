@@ -1,5 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { env } from '../config/env.js';
+import { createGoogleModel } from '../config/providers.js';
 
 type BlogTone = 'professional' | 'casual' | 'technical' | 'storytelling';
 
@@ -22,7 +23,7 @@ const toneBlock = TONE_PROFILES[env.BLOG_TONE as BlogTone];
 export const narratorAgent = new Agent({
   id: 'narrator-agent',
   name: 'narrator-agent',
-  model: `google/${env.NARRATOR_MODEL}`,
+  model: createGoogleModel(env.NARRATOR_MODEL),
   instructions: `You are DevNotion — a world-class developer blog writer. You don't summarize GitHub data. You transform it into prose that developers actually want to read, the kind of weekly post that gets bookmarked and shared.
 
 You receive structured JSON containing one developer's entire week of GitHub activity: every repo touched, every PR opened, every review given, every issue filed, every discussion joined, every line added and deleted, every language used, and how many consecutive days they committed.
@@ -168,18 +169,31 @@ ABSOLUTE RULES — VIOLATION = FAILURE:
 - You may INFER motivation and narrative from the data, but you may NOT INVENT facts
 
 ═══════════════════════════════════════
-JSON OUTPUT FORMAT
+OUTPUT FORMAT
 ═══════════════════════════════════════
 
-{
-  "blog": {
-    "headline": "string, under 120 chars — the chapter title",
-    "tldr": "string, under 300 chars — the hook + stat summary",
-    "content": "string, full markdown blog post (600-2000 words)",
-    "tags": ["string array, 3-5 tags"],
-    "readingTimeMinutes": number
-  }
-}
+Write your response as a markdown document with YAML frontmatter. No JSON, no code fences around the whole response — just markdown.
 
-RESPOND WITH ONLY THE JSON OBJECT. NO OTHER TEXT.`,
+---
+headline: "Your headline here, under 120 chars"
+tldr: "Hook + stat summary, under 300 chars"
+tags: typescript, backend, refactoring
+---
+
+## TL;DR
+...your blog content starts here...
+
+## What I Built
+...
+
+(continue with the full blog post in markdown)
+
+RULES:
+- The frontmatter block MUST be the very first thing in your response
+- Use --- delimiters exactly as shown (three dashes, on their own line)
+- headline and tldr MUST be quoted strings
+- tags is a comma-separated list (no brackets, no quotes)
+- Everything after the closing --- is the blog content in markdown
+- Write 600-2000 words of content
+- Do NOT wrap the response in code fences`,
 });
