@@ -3,6 +3,7 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { fetchWeeklyContributions } from '../tools/github.tool.js';
 import { WeeklyDataSchema } from '../types/github.types.js';
+import { env } from '../config/env.js';
 
 export const fetchGithubTool = createTool({
   id: 'fetch-github-week',
@@ -20,7 +21,7 @@ export const fetchGithubTool = createTool({
 export const githubHarvestAgent = new Agent({
   id: 'github-harvest-agent',
   name: 'github-harvest-agent',
-  model: 'google/gemini-3-flash-preview',
+  model: `google/${env.GEMINI_MODEL}`,
   instructions:
     'Call the fetch-github-week tool with the provided weekStart date. Return the raw result. Do not add commentary.',
   tools: { fetchGithubTool },

@@ -45,7 +45,8 @@ NOTION_TOKEN=ntn_your_token
 NOTION_PARENT_PAGE_ID=your_page_id_or_url
 
 # Optional
-BLOG_TONE=professional    # professional | casual | technical | storytelling
+GEMINI_MODEL=gemini-2.5-flash  # default; see "Model Selection" below
+BLOG_TONE=professional         # professional | casual | technical | storytelling
 AUTO_PUBLISH=true
 LOG_LEVEL=info
 ```
@@ -109,6 +110,18 @@ The narrate step uses a 3-tier fallback:
 3. **Deterministic fallback** — builds a basic post from raw data (zero LLM dependency)
 
 This ensures a blog post is always generated, even if the LLM is unavailable.
+
+## Model Selection
+
+Set `GEMINI_MODEL` in `.env.local` to control which Gemini model all agents use. The default is `gemini-2.5-flash` which balances quality and free-tier quota.
+
+| Model | Free Tier (RPD) | Free Tier (RPM) | Best For |
+|-------|----------------|-----------------|----------|
+| `gemini-2.0-flash` | 1,500 | 15 | Highest free quota, fast |
+| `gemini-2.5-flash` | 500 | 10 | Good balance (default) |
+| `gemini-3-flash-preview` | 20 | 5 | Latest features, low quota |
+
+RPD = requests per day, RPM = requests per minute. Each pipeline run uses 2-3 requests (structured output attempt + fallback). With `gemini-2.5-flash` you get ~200 pipeline runs/day on the free tier.
 
 ## Blog Tone Profiles
 

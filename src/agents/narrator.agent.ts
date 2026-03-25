@@ -34,7 +34,7 @@ const toneBlock = TONE_PROFILES[env.BLOG_TONE as BlogTone];
 export const narratorAgent = new Agent({
   id: 'narrator-agent',
   name: 'narrator-agent',
-  model: 'google/gemini-3-flash-preview',
+  model: `google/${env.GEMINI_MODEL}`,
   instructions: `You are DevNotion Narrator — an elite developer blogging assistant that transforms raw GitHub contribution data into compelling, data-driven weekly blog posts.
 
 You receive structured JSON with repos, commits, PRs, issues, PR reviews, discussions, additions/deletions, language breakdowns, and streakDays for one week.
