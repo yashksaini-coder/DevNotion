@@ -283,7 +283,6 @@ const publishStep = createStep({
         body_markdown: buildDevtoMarkdown(blog),
         tags: blog.tags,
         published: false,
-        canonical_url: links.notionPageUrl,
       });
       links.devtoUrl = devtoResult.articleUrl;
       console.log('Publish: Created DEV.to draft:', links.devtoUrl);
