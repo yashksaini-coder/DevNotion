@@ -45,7 +45,7 @@ A blog post is always generated, even if the LLM is unavailable.
 - Google AI Studio API key(s) ([get here](https://aistudio.google.com))
 - Notion integration token + parent page ID ([setup guide](https://developers.notion.com/docs/create-a-notion-integration))
 - DEV.to API key (optional — [Settings → Extensions → API Keys](https://dev.to/settings/extensions))
-
+<!-- 
 ### Setup
 
 ```bash
@@ -70,7 +70,7 @@ pnpm dev
 pnpm dev -- --week=2026-03-16
 
 # Open the Mastra playground (agent testing UI)
-pnpm playground
+pnpm playground -->
 ```
 
 ### CI (GitHub Actions)
@@ -110,24 +110,6 @@ Each week creates a planner-style Notion page with:
 | 2026-03-23 | Hardening the Rust SDK and Scaling p2p Logic | 5 | 78 | 2 | 3 | 3 | +227/-80 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-23-5-repos-2-PRs-330293ab6e6281e7a51bc185c0a74ddf) | [Draft](https://dev.to/yashksaini/hardening-the-rust-sdk-and-scaling-p2p-logic-3bd0-temp-slug-371406) |
 | 2026-03-16 | Concurrency in the Swarm and Peer Inspection: A... | 7 | 63 | 4 | 2 | 1 | +1,381/-114 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-16-7-repos-4-PRs-330293ab6e6281769b34c74d3da9308e) | [Draft](https://dev.to/yashksaini/concurrency-in-the-swarm-and-peer-inspection-a-week-of-p2p-deep-dives-1gni-temp-slug-2642933) |
 
-## Project Structure
-
-```
-src/
-├── agents/          # Mastra agent definitions
-│   ├── github-harvest.agent.ts
-│   ├── narrator.agent.ts
-│   └── publisher.agent.ts
-├── config/          # Environment validation, LLM providers
-├── mcp/             # Notion MCP client configuration
-├── tools/           # GitHub GraphQL, Notion REST, DEV.to API
-├── types/           # Zod schemas for GitHub data + blog output
-├── utils/           # Date helpers, frontmatter parser, blog log updater
-├── workflows/       # Weekly dispatch workflow (harvest → narrate → publish)
-├── mastra/          # Mastra instance configuration
-└── index.ts         # CLI entry point
-```
-
 ## Tech Stack
 
 - **[Mastra](https://mastra.ai)** — Agent framework with workflows, tools, and MCP support
@@ -136,7 +118,3 @@ src/
 - **[Notion MCP Server](https://github.com/makenotion/notion-mcp-server)** — Model Context Protocol integration
 - **[DEV.to API](https://developers.forem.com/api)** — Draft article publishing
 - **GitHub Actions** — Weekly cron + manual dispatch CI
-
-## License
-
-MIT
