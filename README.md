@@ -70,8 +70,9 @@ pnpm dev
 pnpm dev -- --week=2026-03-16
 
 # Open the Mastra playground (agent testing UI)
-pnpm playground -->
+pnpm playground
 ```
+-->
 
 ### CI (GitHub Actions)
 
@@ -107,8 +108,7 @@ Each week creates a planner-style Notion page with:
 
 | Week | Headline | Repos | Commits | PRs | Issues | Reviews | Lines Changed | Languages | Notion | DEV.to |
 |------|----------|-------|---------|-----|--------|---------|---------------|-----------|--------|--------|
-| 2026-03-23 | Hardening the Rust SDK and Scaling p2p Logic | 5 | 78 | 2 | 3 | 3 | +227/-80 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-23-5-repos-2-PRs-330293ab6e6281e7a51bc185c0a74ddf) | [Draft](https://dev.to/yashksaini/hardening-the-rust-sdk-and-scaling-p2p-logic-3bd0-temp-slug-371406) |
-| 2026-03-16 | Concurrency in the Swarm and Peer Inspection: A... | 7 | 63 | 4 | 2 | 1 | +1,381/-114 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-16-7-repos-4-PRs-330293ab6e6281769b34c74d3da9308e) | [Draft](https://dev.to/yashksaini/concurrency-in-the-swarm-and-peer-inspection-a-week-of-p2p-deep-dives-1gni-temp-slug-2642933) |
+
 
 ## Tech Stack
 
