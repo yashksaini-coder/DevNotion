@@ -35,7 +35,7 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   // Multi-platform publishing (optional — notion,devto)
-  DEVTO_API_KEY: z.string().optional(),
+  DEVTO_API_KEY: z.string().trim().optional(),
   PUBLISH_TARGETS: z
     .string()
     .default('notion')
