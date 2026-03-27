@@ -1,12 +1,12 @@
-# GitPulse
+# DevNotion
 
 A 3-agent [Mastra](https://mastra.ai) pipeline that transforms your weekly GitHub contributions into blog posts on **Notion** and **DEV.to** — fully automated via CI. Built for the [DEV.to x Notion MCP Challenge](https://dev.to/challenges/notion-2026-03-04).
 
-<img src="./assets/Architecture.png" alt="GitPulse Architecture" />
+<img src="./assets/Architecture.png" alt="DevNotion Architecture" />
 
 ## What It Does
 
-Every Sunday (or on-demand via CI), GitPulse:
+Every Sunday (or on-demand via CI), DevNotion:
 
 1. **Harvests** your GitHub activity via GraphQL — commits, PRs, issues, reviews, discussions, language stats, and contribution streak
 2. **Narrates** the data into a first-person blog post using Gemini — casual, playful, written as the developer
@@ -49,8 +49,8 @@ A blog post is always generated, even if the LLM is unavailable.
 ### Setup
 
 ```bash
-git clone https://github.com/yashksaini-coder/GitPulse.git
-cd GitPulse
+git clone https://github.com/yashksaini-coder/DevNotion.git
+cd DevNotion
 pnpm install
 ```
 

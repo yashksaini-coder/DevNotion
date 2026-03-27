@@ -5,7 +5,7 @@ import { notionMcp } from './mcp/notion.js';
 
 async function runWeeklyDispatch(weekStart?: string) {
   const week = weekStart ?? getLastMonday();
-  console.log(`Starting GitPulse for week of ${week}...`);
+  console.log(`Starting DevNotion for week of ${week}...`);
 
   const workflow = mastra.getWorkflow('weekly-dispatch');
   const run = await workflow.createRun();

@@ -1,5 +1,5 @@
 {
-  "name": "gitpulse",
+  "name": "DevNotion",
   "version": "1.0.0",
   "description": "3-agent Mastra pipeline: GitHub activity → AI blog narration → Notion + DEV.to (with MCP)",
   "type": "module",

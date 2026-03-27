@@ -37,7 +37,7 @@ export const publisherAgent = new Agent({
   id: 'publisher-agent',
   name: 'publisher-agent',
   model: createGoogleModel(env.UTILITY_MODEL),
-  instructions: `You are the GitPulse Publisher agent. You receive a blog post as JSON and publish it to configured platforms.
+  instructions: `You are the DevNotion Publisher agent. You receive a blog post as JSON and publish it to configured platforms.
 
 You have access to two sets of Notion tools:
 1. **Notion MCP tools** (prefixed with notion_) — full Notion API surface via Model Context Protocol

@@ -218,7 +218,7 @@ function buildPlannerMarkdown(
   const now = new Date().toISOString().split('T')[0];
   lines.push('---');
   lines.push('');
-  lines.push(`${blog.readingTimeMinutes} min read · Generated ${now} by [GitPulse](https://github.com/yashksaini-coder/GitPulse)`);
+  lines.push(`${blog.readingTimeMinutes} min read · Generated ${now} by [DevNotion](https://github.com/yashksaini-coder/DevNotion)`);
 
   return lines.join('\n');
 }
@@ -231,7 +231,7 @@ function buildDevtoMarkdown(blog: NarratorOutput['blog']): string {
   let md = `> ${blog.tldr}\n\n`;
   md += blog.content;
   md += `\n\n---\n\n`;
-  md += `${blog.tags.map((t) => `#${t}`).join(' ')} · ${blog.readingTimeMinutes} min read · Generated ${now} by [GitPulse](https://github.com/yashksaini-coder/GitPulse)`;
+  md += `${blog.tags.map((t) => `#${t}`).join(' ')} · ${blog.readingTimeMinutes} min read · Generated ${now} by [DevNotion](https://github.com/yashksaini-coder/DevNotion)`;
   return md;
 }
 
