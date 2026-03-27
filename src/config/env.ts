@@ -30,9 +30,16 @@ const EnvSchema = z.object({
   // Model config — all Gemini, key rotation handles rate limits
   NARRATOR_MODEL: z.string().default('gemini-3-flash-preview'),
   UTILITY_MODEL: z.string().default('gemini-3-flash-preview'),
-  BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('professional'),
+  BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('casual'),
   AUTO_PUBLISH: z.coerce.boolean().default(true),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
+  // Multi-platform publishing (optional — notion,devto)
+  DEVTO_API_KEY: z.string().optional(),
+  PUBLISH_TARGETS: z
+    .string()
+    .default('notion')
+    .transform((val) => val.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
