@@ -47,7 +47,7 @@ jobs:
 
       - name: Run weekly dispatch
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_USERNAME: ${{ secrets.GH_USERNAME }}
           GOOGLE_API_KEYS: ${{ secrets.GOOGLE_API_KEYS }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}

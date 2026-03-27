@@ -80,7 +80,7 @@ The workflow runs automatically every Sunday at 08:00 UTC. You can also trigger 
 
 **Actions → Weekly Blog Dispatch → Run workflow** (optionally provide a `YYYY-MM-DD` week start)
 
-Required secrets: `GH_PAT`, `GH_USERNAME`, `GOOGLE_API_KEYS`, `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID`, `DEVTO_API_KEY`
+Required secrets: `GH_TOKEN`, `GH_USERNAME`, `GOOGLE_API_KEYS`, `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID`, `DEVTO_API_KEY`
 
 ## Blog Tone Profiles
 
