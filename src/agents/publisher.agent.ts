@@ -8,18 +8,25 @@ import {
   updateNotionPageTool,
 } from '../tools/notion-rest.tool.js';
 import { createDevtoArticleTool } from '../tools/devto.tool.js';
+import { getNotionMcpTools } from '../mcp/notion.js';
 
-const tools: Record<string, any> = {
+// Direct tools (Markdown Content API + DEV.to — not available via MCP)
+const directTools: Record<string, any> = {
   createNotionPage: createNotionPageTool,
   writeMarkdown: writeMarkdownTool,
   searchNotion: searchNotionTool,
   updateNotionPage: updateNotionPageTool,
 };
 
-// Only register platform tools when API keys are configured
 if (env.DEVTO_API_KEY) {
-  tools.createDevtoArticle = createDevtoArticleTool;
+  directTools.createDevtoArticle = createDevtoArticleTool;
 }
+
+// Merge: Notion MCP tools + direct tools
+// MCP gives full Notion API surface; direct tools add Markdown Content API + DEV.to
+const mcpTools = await getNotionMcpTools();
+const tools = { ...mcpTools, ...directTools };
+
 const platformInstructions = env.DEVTO_API_KEY
   ? `## DEV.to Publishing
 - Use devto-create-article to publish. Tags: max 4, lowercase alphanumeric.
@@ -30,7 +37,11 @@ export const publisherAgent = new Agent({
   id: 'publisher-agent',
   name: 'publisher-agent',
   model: createGoogleModel(env.UTILITY_MODEL),
-  instructions: `You are the DevNotion Publisher agent. You receive a blog post as JSON and publish it to configured platforms.
+  instructions: `You are the GitPulse Publisher agent. You receive a blog post as JSON and publish it to configured platforms.
+
+You have access to two sets of Notion tools:
+1. **Notion MCP tools** (prefixed with notion_) — full Notion API surface via Model Context Protocol
+2. **Direct tools** — Markdown Content API (notion-write-markdown) and page management
 
 ## Notion Publishing
 1. Search Notion for an existing page matching "Week of {weekStart}" using notion-search-week.

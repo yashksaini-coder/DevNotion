@@ -1,11 +1,11 @@
 {
-  "name": "devnotion",
+  "name": "gitpulse",
   "version": "1.0.0",
-  "description": "3-agent Mastra pipeline: GitHub contributions → AI blog narration → Notion",
+  "description": "3-agent Mastra pipeline: GitHub activity → AI blog narration → Notion + DEV.to (with MCP)",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "tsx src/index.ts --now",
+    "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "build": "tsup src/index.ts --format esm --dts",
     "test": "vitest run",
@@ -17,10 +17,10 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.53",
     "@mastra/core": "^1.15.0",
+    "@mastra/mcp": "^1.3.1",
     "@notionhq/client": "^2.3.0",
     "dotenv": "^16.4.1",
     "graphql-request": "^6.1.0",
-    "node-cron": "^3.0.3",
     "p-queue": "^8.0.1",
     "p-retry": "^6.2.1",
     "tsx": "^4.7.0",
@@ -29,13 +29,13 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@types/node-cron": "^3.0.11",
     "mastra": "^1.3.14",
     "msw": "^2.3.0",
     "tsup": "^8.0.2",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
   },
+  "packageManager": "pnpm@10.32.1",
   "pnpm": {
     "overrides": {
       "zod": "$zod"

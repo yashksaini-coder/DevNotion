@@ -235,19 +235,32 @@ function buildDevtoMarkdown(blog: NarratorOutput['blog']): string {
   return md;
 }
 
+const PublishOutputSchema = z.object({
+  notionPageUrl: z.string().optional(),
+  devtoUrl: z.string().optional(),
+  weekStart: z.string(),
+  weekEnd: z.string(),
+  headline: z.string(),
+  totalCommits: z.number(),
+  totalPRs: z.number(),
+  totalIssues: z.number(),
+  totalReviews: z.number(),
+  totalAdditions: z.number(),
+  totalDeletions: z.number(),
+  repoCount: z.number(),
+  topLanguages: z.array(z.string()),
+});
+
 const publishStep = createStep({
   id: 'publish',
   inputSchema: NarrateOutputSchema,
-  outputSchema: z.object({
-    notionPageUrl: z.string().optional(),
-    devtoUrl: z.string().optional(),
-  }),
+  outputSchema: PublishOutputSchema,
   execute: async ({ inputData }) => {
     const { env } = await import('../config/env.js');
     const targets = env.PUBLISH_TARGETS;
     const { blog, weeklyData } = inputData;
 
-    const result: { notionPageUrl?: string; devtoUrl?: string } = {};
+    const links: { notionPageUrl?: string; devtoUrl?: string } = {};
 
     // 1. Create Notion page (need pageId before writing content)
     let notionPageId: string | undefined;
@@ -257,8 +270,8 @@ const publishStep = createStep({
       const title = `Week of ${weeklyData.weekStart} · ${weeklyData.repos.length} repos · ${weeklyData.totalPRs} PRs`;
       const createResult = await createNotionPage(title);
       notionPageId = createResult.pageId;
-      result.notionPageUrl = createResult.pageUrl;
-      console.log('Publish: Created Notion page:', result.notionPageUrl);
+      links.notionPageUrl = createResult.pageUrl;
+      console.log('Publish: Created Notion page:', links.notionPageUrl);
     }
 
     // 2. Create DEV.to draft (so we can embed the link in the Notion planner)
@@ -270,34 +283,49 @@ const publishStep = createStep({
         body_markdown: buildDevtoMarkdown(blog),
         tags: blog.tags,
         published: false,
-        canonical_url: result.notionPageUrl,
+        canonical_url: links.notionPageUrl,
       });
-      result.devtoUrl = devtoResult.articleUrl;
-      console.log('Publish: Created DEV.to draft:', result.devtoUrl);
+      links.devtoUrl = devtoResult.articleUrl;
+      console.log('Publish: Created DEV.to draft:', links.devtoUrl);
     }
 
     // 3. Write planner-style markdown to Notion (includes DEV.to link)
     if (notionPageId) {
       const { writeNotionMarkdown, updateNotionPage } = await import('../tools/notion-rest.tool.js');
 
-      const plannerMd = buildPlannerMarkdown(weeklyData, blog, result);
+      const plannerMd = buildPlannerMarkdown(weeklyData, blog, links);
       await writeNotionMarkdown(notionPageId, plannerMd);
       console.log('Publish: Planner markdown written to Notion');
 
       await updateNotionPage(notionPageId, '📊');
     }
 
-    return result;
+    const topLangs = Object.entries(weeklyData.languages)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([l]) => l);
+
+    return {
+      ...links,
+      weekStart: weeklyData.weekStart,
+      weekEnd: weeklyData.weekEnd,
+      headline: blog.headline,
+      totalCommits: weeklyData.totalCommits,
+      totalPRs: weeklyData.totalPRs,
+      totalIssues: weeklyData.totalIssues,
+      totalReviews: weeklyData.totalReviews,
+      totalAdditions: weeklyData.totalAdditions,
+      totalDeletions: weeklyData.totalDeletions,
+      repoCount: weeklyData.repos.length,
+      topLanguages: topLangs,
+    };
   },
 });
 
 export const weeklyDispatchWorkflow = createWorkflow({
   id: 'weekly-dispatch',
   inputSchema: z.object({ weekStart: z.string() }),
-  outputSchema: z.object({
-    notionPageUrl: z.string().optional(),
-    devtoUrl: z.string().optional(),
-  }),
+  outputSchema: PublishOutputSchema,
 })
   .then(harvestStep)
   .then(narrateStep)

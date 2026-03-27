@@ -1,23 +1,42 @@
 import { mastra } from './mastra/index.js';
-import cron from 'node-cron';
 import { getLastMonday } from './utils/dates.js';
+import { updateBlogLog } from './utils/update-blog-log.js';
+import { notionMcp } from './mcp/notion.js';
 
 async function runWeeklyDispatch(weekStart?: string) {
   const week = weekStart ?? getLastMonday();
-  console.log(`Starting DevNotion for week of ${week}...`);
+  console.log(`Starting GitPulse for week of ${week}...`);
 
   const workflow = mastra.getWorkflow('weekly-dispatch');
   const run = await workflow.createRun();
   const result = await run.start({ inputData: { weekStart: week } });
 
-  if (result.status === 'success') {
-    console.log(`Published: ${result.result?.notionPageUrl}`);
+  if (result.status === 'success' && result.result) {
+    const r = result.result;
+    console.log(`Published: ${r.notionPageUrl ?? '(no Notion)'}`);
+    if (r.devtoUrl) console.log(`DEV.to draft: ${r.devtoUrl}`);
+
+    // Update blog/README.md with this week's metrics
+    updateBlogLog({
+      weekStart: r.weekStart,
+      weekEnd: r.weekEnd,
+      headline: r.headline,
+      repoCount: r.repoCount,
+      totalCommits: r.totalCommits,
+      totalPRs: r.totalPRs,
+      totalIssues: r.totalIssues,
+      totalReviews: r.totalReviews,
+      totalAdditions: r.totalAdditions,
+      totalDeletions: r.totalDeletions,
+      topLanguages: r.topLanguages,
+      notionPageUrl: r.notionPageUrl,
+      devtoUrl: r.devtoUrl,
+    });
   } else {
     console.error('Workflow failed:', result.status);
     if ('error' in result) {
       console.error(result.error);
     }
-    // Log individual step results for debugging
     if ('steps' in result && result.steps) {
       for (const [stepId, stepResult] of Object.entries(result.steps as Record<string, any>)) {
         console.error(`  Step "${stepId}": ${stepResult?.status}`, stepResult?.output ?? stepResult?.error ?? '');
@@ -29,16 +48,9 @@ async function runWeeklyDispatch(weekStart?: string) {
 
 // Parse CLI arguments
 const weekArg = process.argv.find((a) => a.startsWith('--week='))?.split('=')[1];
-
-if (weekArg || process.argv.includes('--now')) {
-  runWeeklyDispatch(weekArg).catch((err) => {
+runWeeklyDispatch(weekArg)
+  .catch((err) => {
     console.error(err);
     process.exit(1);
-  });
-} else {
-  // Weekly cron: every Sunday at 08:00 local time
-  cron.schedule('0 8 * * 0', () => {
-    runWeeklyDispatch().catch(console.error);
-  });
-  console.log('DevNotion cron started. Runs every Sunday at 08:00.');
-}
+  })
+  .finally(() => notionMcp.disconnect().catch(() => {}));
