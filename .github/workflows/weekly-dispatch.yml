@@ -63,9 +63,12 @@ jobs:
           fi
 
       - name: Commit blog log
+        env:
+          WEEK_INPUT: ${{ inputs.week }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "yashksaini-coder"
+          git config user.email "yashksaini-coder@users.noreply.github.com"
+          WEEK="${WEEK_INPUT:-$(date -u -d 'last monday' +%Y-%m-%d)}"
           git add README.md
-          git diff --cached --quiet || git commit -m "docs: update blog log for $(date -u +%Y-%m-%d)"
+          git diff --cached --quiet || git commit -m "docs: new blog published for week $WEEK"
           git push
