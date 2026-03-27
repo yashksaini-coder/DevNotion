@@ -1,79 +1,142 @@
-# DevNotion
+# GitPulse
 
-A 3-agent [Mastra](https://mastra.ai) pipeline that transforms your weekly GitHub contributions into polished blog posts on Notion — fully automated. Built for the [DEV.to x Notion MCP Challenge](https://dev.to/challenges/notion-2026-03-04).
+A 3-agent [Mastra](https://mastra.ai) pipeline that transforms your weekly GitHub contributions into blog posts on **Notion** and **DEV.to** — fully automated via CI. Built for the [DEV.to x Notion MCP Challenge](https://dev.to/challenges/notion-2026-03-04).
 
-<img src="./assets/Architecture.png" alt="DevNotion Overview" />
+<img src="./assets/Architecture.png" alt="GitPulse Architecture" />
 
 ## What It Does
 
-Every Sunday (or on-demand), DevNotion:
+Every Sunday (or on-demand via CI), GitPulse:
 
 1. **Harvests** your GitHub activity via GraphQL — commits, PRs, issues, reviews, discussions, language stats, and contribution streak
-2. **Narrates** the data into an engaging blog post using Gemini, with tone-aware writing (professional, casual, technical, or storytelling)
-3. **Publishes** the post to Notion as a richly formatted markdown page
+2. **Narrates** the data into a first-person blog post using Gemini — casual, playful, written as the developer
+3. **Publishes** to two platforms:
+   - **Notion** — planner-style page with stats tables, repo breakdowns, PR/issue/review tables, and the full blog post
+   - **DEV.to** — draft article with canonical URL pointing back to Notion
+
+## Architecture
+
+| Step | Agent | LLM? | What it does |
+|------|-------|------|--------------|
+| Harvest | `github-harvest-agent` | No | Fetches weekly GitHub data via GraphQL (deterministic) |
+| Narrate | `narrator-agent` | Yes (Gemini) | Writes a first-person blog post from the data |
+| Publish | `publisher-agent` | No | Creates Notion page + DEV.to draft via direct APIs |
+
+The pipeline only uses an LLM where it adds value (narration). Harvest and publish are deterministic — no token overhead, no hallucination risk.
+
+### MCP Integration
+
+The publisher agent integrates with the [Notion MCP Server](https://github.com/makenotion/notion-mcp-server) (`@notionhq/notion-mcp-server`) via `@mastra/mcp`, giving it the full Notion API surface in the Mastra playground. The automated workflow uses direct API calls for reliability, with the Notion Markdown Content API for rich page content.
+
+### Narration Fallback Chain
+
+1. **Gemini generation** — YAML frontmatter + markdown blog post
+2. **Deterministic fallback** — builds a basic post from raw data (zero LLM dependency)
+
+A blog post is always generated, even if the LLM is unavailable.
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - pnpm
 - GitHub personal access token (`ghp_`)
-- Google AI Studio API key ([get one here](https://aistudio.google.com))
+- Google AI Studio API key(s) ([get here](https://aistudio.google.com))
 - Notion integration token + parent page ID ([setup guide](https://developers.notion.com/docs/create-a-notion-integration))
+- DEV.to API key (optional — [Settings → Extensions → API Keys](https://dev.to/settings/extensions))
 
 ### Setup
 
 ```bash
-git clone https://github.com/yashksaini-coder/DevNotion.git
-cd DevNotion
+git clone https://github.com/yashksaini-coder/GitPulse.git
+cd GitPulse
 pnpm install
 ```
 
-Copy `.env.example` to `.env.local` and fill in your keys (see `.env.example` for all options).
+Copy `.env.example` to `.env.local` and fill in your keys:
+
+```bash
+cp .env.example .env.local
+```
 
 ### Run
 
 ```bash
-# Run once for the current week
+# Run for the current week
 pnpm dev
 
 # Run for a specific week
-pnpm dev -- --week=2026-03-18
-
-# Start the cron scheduler (every Sunday 08:00)
-pnpm start
+pnpm dev -- --week=2026-03-16
 
 # Open the Mastra playground (agent testing UI)
 pnpm playground
 ```
----
 
-### Narrator Agent
+### CI (GitHub Actions)
 
-The narrator is the core of DevNotion. It uses a tone-aware prompt system with four voice profiles and generates structured blog posts with:
+The workflow runs automatically every Sunday at 08:00 UTC. You can also trigger it manually:
 
-- **Conditional sections** — empty sections are omitted entirely, not filled with "nothing this week"
-- **Data-driven insights** — add/delete ratio analysis, streak celebration, review balance commentary
-- **Anti-hallucination guardrails** — strict rules against inventing repos, approximating numbers, or fabricating activity
-- **Engagement techniques** — hook openings, section transitions, developer empathy lines
+**Actions → Weekly Blog Dispatch → Run workflow** (optionally provide a `YYYY-MM-DD` week start)
 
-### Narration Fallback Chain
-
-The narrate step uses a 2-tier fallback:
-
-1. **Markdown generation** — Narrator writes YAML frontmatter + markdown blog post
-2. **Deterministic fallback** — builds a basic post from raw data (zero LLM dependency)
-
-This ensures a blog post is always generated, even if the LLM is unavailable.
+Required secrets: `GH_PAT`, `GH_USERNAME`, `GOOGLE_API_KEYS`, `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID`, `DEVTO_API_KEY`
 
 ## Blog Tone Profiles
 
-Set `BLOG_TONE` in your `.env.local`:
+Set `BLOG_TONE` in your `.env.local` (default: `casual`):
 
 | Tone | Style |
 |------|-------|
-| `professional` | Authoritative, metrics-forward, corporate-blog safe |
-| `casual` | Conversational, emoji-friendly, dev-Twitter energy |
-| `technical` | Dense, precise, code-centric |
-| `storytelling` | Narrative arc, scene-setting, callbacks |
+| `casual` | First-person, playful, OSS-passionate dev energy |
+| `professional` | Confident builder, clear and direct |
+| `technical` | Deep-dive, architecture-focused, conversational |
+| `storytelling` | Personal dev diary, honest and engaging |
+
+## Notion Page Format
+
+Each week creates a planner-style Notion page with:
+
+- **Published Links** — Notion page + DEV.to draft edit link
+- **Week at a Glance** — stats table (commits, PRs, issues, reviews, lines changed)
+- **Active Repositories** — repo table with commits, language, changes
+- **Pull Requests / Issues / Reviews / Discussions** — structured tables
+- **Languages** — top languages by commit count
+- **Blog Post** — the full narrated content
+
+## Blog Log
+
+| Week | Headline | Repos | Commits | PRs | Issues | Reviews | Lines Changed | Languages | Notion | DEV.to |
+|------|----------|-------|---------|-----|--------|---------|---------------|-----------|--------|--------|
+| 2026-03-23 | Hardening the Rust SDK and Scaling p2p Logic | 5 | 78 | 2 | 3 | 3 | +227/-80 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-23-5-repos-2-PRs-330293ab6e6281e7a51bc185c0a74ddf) | [Draft](https://dev.to/yashksaini/hardening-the-rust-sdk-and-scaling-p2p-logic-3bd0-temp-slug-371406) |
+| 2026-03-16 | Concurrency in the Swarm and Peer Inspection: A... | 7 | 63 | 4 | 2 | 1 | +1,381/-114 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-16-7-repos-4-PRs-330293ab6e6281769b34c74d3da9308e) | [Draft](https://dev.to/yashksaini/concurrency-in-the-swarm-and-peer-inspection-a-week-of-p2p-deep-dives-1gni-temp-slug-2642933) |
+
+## Project Structure
+
+```
+src/
+├── agents/          # Mastra agent definitions
+│   ├── github-harvest.agent.ts
+│   ├── narrator.agent.ts
+│   └── publisher.agent.ts
+├── config/          # Environment validation, LLM providers
+├── mcp/             # Notion MCP client configuration
+├── tools/           # GitHub GraphQL, Notion REST, DEV.to API
+├── types/           # Zod schemas for GitHub data + blog output
+├── utils/           # Date helpers, frontmatter parser, blog log updater
+├── workflows/       # Weekly dispatch workflow (harvest → narrate → publish)
+├── mastra/          # Mastra instance configuration
+└── index.ts         # CLI entry point
+```
+
+## Tech Stack
+
+- **[Mastra](https://mastra.ai)** — Agent framework with workflows, tools, and MCP support
+- **[Gemini](https://aistudio.google.com)** — LLM provider (key rotation for rate limits)
+- **[Notion API](https://developers.notion.com)** — Page creation + Markdown Content API
+- **[Notion MCP Server](https://github.com/makenotion/notion-mcp-server)** — Model Context Protocol integration
+- **[DEV.to API](https://developers.forem.com/api)** — Draft article publishing
+- **GitHub Actions** — Weekly cron + manual dispatch CI
+
+## License
+
+MIT
