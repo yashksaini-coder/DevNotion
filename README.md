@@ -108,6 +108,7 @@ Each week creates a planner-style Notion page with:
 
 | Week | Headline | Repos | Commits | PRs | Issues | Reviews | Lines Changed | Languages | Notion | DEV.to |
 |------|----------|-------|---------|-----|--------|---------|---------------|-----------|--------|--------|
+| 2026-03-23 | Week of 2026-03-23: 134 commits across 7 repos | 7 | 134 | 2 | 3 | 3 | +227/-80 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-23-7-repos-2-PRs-332293ab6e6281c781cbc386d489bc15) | [Draft](https://dev.to/yashksaini/week-of-2026-03-23-134-commits-across-7-repos-420l-temp-slug-9881385) |
 | 2026-03-08 | Scaling p2p Concurrency and a 59-Commit Sprint ... | 10 | 119 | 2 | 2 | 1 | +521/-84 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-08-10-repos-2-PRs-330293ab6e6281999985f0a172ba2f6e) | [Draft](https://dev.to/yashksaini/scaling-p2p-concurrency-and-a-59-commit-sprint-on-agentpay-maa-temp-slug-9145534) |
 | 2026-03-01 | Simulating P2P Attacks and Teaching AI to Resum... | 9 | 78 | 4 | 0 | 1 | +21,632/-6,597 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-01-9-repos-4-PRs-330293ab6e628155b1f7d09200abf8ac) | [Draft](https://dev.to/yashksaini/simulating-p2p-attacks-and-teaching-ai-to-resume-sessions-fge-temp-slug-2771547) |
 
