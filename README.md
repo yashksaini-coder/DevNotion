@@ -104,16 +104,6 @@ Each week creates a planner-style Notion page with:
 - **Languages** — top languages by commit count
 - **Blog Post** — the full narrated content
 
-## Blog Log
-
-| Week | Headline | Repos | Commits | PRs | Issues | Reviews | Lines Changed | Languages | Notion | DEV.to |
-|------|----------|-------|---------|-----|--------|---------|---------------|-----------|--------|--------|
-| 2026-04-06 | Scaling RCA with MariaDB and MongoDB Atlas: A W... | 7 | 33 | 2 | 0 | 0 | +3,221/-27 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-04-06-7-repos-2-PRs-340293ab6e628197bbc8c6e900c119a2) | [Draft](https://dev.to/yashksaini/scaling-rca-with-mariadb-and-mongodb-atlas-a-week-of-deep-integrations-2h90-temp-slug-4391787) |
-| 2026-03-30 | Refactoring py-libp2p and a 7-day streak of Rus... | 10 | 94 | 1 | 0 | 1 | +207/-77 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-30-10-repos-1-PRs-339293ab6e62815bb69ed4c1b00807a3) | [Draft](https://dev.to/yashksaini/refactoring-py-libp2p-and-a-7-day-streak-of-rust-exploration-1n66-temp-slug-7796777) |
-| 2026-03-23 | Week of 2026-03-23: 134 commits across 7 repos | 7 | 134 | 2 | 3 | 3 | +227/-80 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-23-7-repos-2-PRs-332293ab6e6281c781cbc386d489bc15) | [Draft](https://dev.to/yashksaini/week-of-2026-03-23-134-commits-across-7-repos-420l-temp-slug-9881385) |
-| 2026-03-08 | Scaling p2p Concurrency and a 59-Commit Sprint ... | 10 | 119 | 2 | 2 | 1 | +521/-84 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-08-10-repos-2-PRs-330293ab6e6281999985f0a172ba2f6e) | [Draft](https://dev.to/yashksaini/scaling-p2p-concurrency-and-a-59-commit-sprint-on-agentpay-maa-temp-slug-9145534) |
-| 2026-03-01 | Simulating P2P Attacks and Teaching AI to Resum... | 9 | 78 | 4 | 0 | 1 | +21,632/-6,597 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-01-9-repos-4-PRs-330293ab6e628155b1f7d09200abf8ac) | [Draft](https://dev.to/yashksaini/simulating-p2p-attacks-and-teaching-ai-to-resume-sessions-fge-temp-slug-2771547) |
-
 
 ## Tech Stack
 
@@ -123,3 +113,15 @@ Each week creates a planner-style Notion page with:
 - **[Notion MCP Server](https://github.com/makenotion/notion-mcp-server)** — Model Context Protocol integration
 - **[DEV.to API](https://developers.forem.com/api)** — Draft article publishing
 - **GitHub Actions** — Weekly cron + manual dispatch CI
+
+---
+
+## Blog Log
+
+| Week | Headline | Repos | Commits | PRs | Issues | Reviews | Lines Changed | Languages | Notion | DEV.to |
+|------|----------|-------|---------|-----|--------|---------|---------------|-----------|--------|--------|
+| 2026-04-06 | Scaling RCA with MariaDB and MongoDB Atlas: A W... | 7 | 33 | 2 | 0 | 0 | +3,221/-27 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-04-06-7-repos-2-PRs-340293ab6e628197bbc8c6e900c119a2) | [Draft](https://dev.to/yashksaini/scaling-rca-with-mariadb-and-mongodb-atlas-a-week-of-deep-integrations-2h90-temp-slug-4391787) |
+| 2026-03-30 | Refactoring py-libp2p and a 7-day streak of Rus... | 10 | 94 | 1 | 0 | 1 | +207/-77 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-30-10-repos-1-PRs-339293ab6e62815bb69ed4c1b00807a3) | [Draft](https://dev.to/yashksaini/refactoring-py-libp2p-and-a-7-day-streak-of-rust-exploration-1n66-temp-slug-7796777) |
+| 2026-03-23 | Week of 2026-03-23: 134 commits across 7 repos | 7 | 134 | 2 | 3 | 3 | +227/-80 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-23-7-repos-2-PRs-332293ab6e6281c781cbc386d489bc15) | [Draft](https://dev.to/yashksaini/week-of-2026-03-23-134-commits-across-7-repos-420l-temp-slug-9881385) |
+| 2026-03-08 | Scaling p2p Concurrency and a 59-Commit Sprint ... | 10 | 119 | 2 | 2 | 1 | +521/-84 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-08-10-repos-2-PRs-330293ab6e6281999985f0a172ba2f6e) | [Draft](https://dev.to/yashksaini/scaling-p2p-concurrency-and-a-59-commit-sprint-on-agentpay-maa-temp-slug-9145534) |
+| 2026-03-01 | Simulating P2P Attacks and Teaching AI to Resum... | 9 | 78 | 4 | 0 | 1 | +21,632/-6,597 | Python, TypeScript, Rust | [View](https://www.notion.so/Week-of-2026-03-01-9-repos-4-PRs-330293ab6e628155b1f7d09200abf8ac) | [Draft](https://dev.to/yashksaini/simulating-p2p-attacks-and-teaching-ai-to-resume-sessions-fge-temp-slug-2771547) |
