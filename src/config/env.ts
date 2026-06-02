@@ -13,10 +13,6 @@ const EnvSchema = z.object({
   // Required
   GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required (ghp_ or github_pat_ prefix)'),
   GITHUB_USERNAME: z.string().min(1, 'GITHUB_USERNAME is required'),
-  GOOGLE_API_KEYS: z
-    .string()
-    .min(1, 'GOOGLE_API_KEYS is required (comma-separated Google AI API keys)')
-    .transform((val) => val.split(',').map((k) => k.trim()).filter(Boolean)),
   NOTION_TOKEN: z.string().min(1, 'NOTION_TOKEN is required (Notion Internal Integration)'),
   NOTION_PARENT_PAGE_ID: z
     .string()
@@ -27,19 +23,57 @@ const EnvSchema = z.object({
       return match ? match[1] : val;
     }),
 
-  // Model config — all Gemini, key rotation handles rate limits
-  NARRATOR_MODEL: z.string().default('gemini-3-flash-preview'),
-  UTILITY_MODEL: z.string().default('gemini-3-flash-preview'),
+  // LLM Provider — defaults to gemini for backward compatibility
+  LLM_PROVIDER: z.enum(['gemini', 'openai', 'anthropic']).default('gemini'),
+  LLM_MODEL: z.string().optional(), // optional model override per provider
+
+  // Google (Gemini) — required when LLM_PROVIDER=gemini
+  GOOGLE_API_KEYS: z
+    .string()
+    .optional()
+    .transform((val) =>
+      val
+        ? val
+            .split(',')
+            .map((k) => k.trim())
+            .filter(Boolean)
+        : [],
+    ),
+
+  // OpenAI — required when LLM_PROVIDER=openai
+  OPENAI_API_KEY: z.string().optional(),
+
+  // Anthropic — required when LLM_PROVIDER=anthropic
+  ANTHROPIC_API_KEY: z.string().optional(),
+
+  // Narration options
+  NARRATOR_MODEL: z.string().default('gemini-2.0-flash'),
+  UTILITY_MODEL: z.string().default('gemini-2.0-flash'),
   BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('casual'),
+  FOCUS_AREAS: z.string().optional(), // e.g. "TypeScript performance,open source,API design"
+
+  // Behavior
   AUTO_PUBLISH: z.coerce.boolean().default(true),
+  PUBLISH_MODE: z.enum(['auto', 'draft']).default('auto'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
-  // Multi-platform publishing (optional — notion,devto)
-  DEVTO_API_KEY: z.string().trim().optional(),
+  // Multi-platform publishing (optional — notion-only works without these)
   PUBLISH_TARGETS: z
     .string()
     .default('notion')
-    .transform((val) => val.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)),
+    .transform((val) =>
+      val
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  DEVTO_API_KEY: z.string().trim().optional(),
+  HASHNODE_TOKEN: z.string().optional(),
+  HASHNODE_PUBLICATION_ID: z.string().optional(),
+
+  // Dashboard (optional)
+  DASHBOARD_PORT: z.coerce.number().int().min(1024).max(65535).default(3000),
+  DASHBOARD_TOKEN: z.string().optional(), // optional bearer token auth for dashboard
 });
 
 export type Env = z.infer<typeof EnvSchema>;
@@ -53,7 +87,37 @@ function validateEnv(): Env {
     }
     process.exit(1);
   }
-  return result.data;
+
+  const env = result.data;
+
+  // Cross-field validation: ensure the selected provider has its key
+  if (env.LLM_PROVIDER === 'gemini' && (!env.GOOGLE_API_KEYS || env.GOOGLE_API_KEYS.length === 0)) {
+    console.error('  GOOGLE_API_KEYS: required when LLM_PROVIDER=gemini');
+    process.exit(1);
+  }
+  if (env.LLM_PROVIDER === 'openai' && !env.OPENAI_API_KEY) {
+    console.error('  OPENAI_API_KEY: required when LLM_PROVIDER=openai');
+    process.exit(1);
+  }
+  if (env.LLM_PROVIDER === 'anthropic' && !env.ANTHROPIC_API_KEY) {
+    console.error('  ANTHROPIC_API_KEY: required when LLM_PROVIDER=anthropic');
+    process.exit(1);
+  }
+
+  // Hashnode validation
+  if (env.PUBLISH_TARGETS.includes('hashnode')) {
+    if (!env.HASHNODE_TOKEN) {
+      console.error('  HASHNODE_TOKEN: required when hashnode is in PUBLISH_TARGETS');
+      process.exit(1);
+    }
+    if (!env.HASHNODE_PUBLICATION_ID) {
+      console.error('  HASHNODE_PUBLICATION_ID: required when hashnode is in PUBLISH_TARGETS');
+      process.exit(1);
+    }
+  }
+
+  return env;
 }
 
 export const env = validateEnv();
+

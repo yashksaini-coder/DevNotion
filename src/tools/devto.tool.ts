@@ -1,17 +1,12 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { env } from '../config/env.js';
-import PQueue from 'p-queue';
-import pRetry from 'p-retry';
+import { devtoLimiter } from '../utils/rate-limiter.js';
 
 const DEVTO_BASE = 'https://dev.to/api';
 
-// Rate limiter: DEV.to allows 30 req/30s for API key users
-const queue = new PQueue({ concurrency: 1, interval: 1000, intervalCap: 1 });
-
-async function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
-  return queue.add(() => pRetry(fn, { retries: 3 })) as Promise<T>;
-}
+// Use shared rate limiter (DEV.to allows 30 req/30s for API key users)
+const rateLimited = devtoLimiter;
 
 function headers() {
   return {
