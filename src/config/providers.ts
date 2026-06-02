@@ -5,11 +5,15 @@ import { env } from './env.js';
  * Round-robin key rotation across Google API keys.
  * Each call to nextKey() returns the next key in the pool,
  * distributing RPD quota across all configured keys.
+ *
+ * Only used when LLM_PROVIDER=gemini (or as fallback for Mastra agent model field).
  */
 let keyIndex = 0;
 
 function nextKey(): string {
-  const key = env.GOOGLE_API_KEYS[keyIndex % env.GOOGLE_API_KEYS.length]!;
+  const keys = env.GOOGLE_API_KEYS ?? [];
+  if (keys.length === 0) throw new Error('GOOGLE_API_KEYS is empty — cannot create Google model');
+  const key = keys[keyIndex % keys.length]!;
   keyIndex++;
   return key;
 }
@@ -22,3 +26,4 @@ export function createGoogleModel(modelId: string): ReturnType<ReturnType<typeof
   const google = createGoogleGenerativeAI({ apiKey: nextKey() });
   return google(modelId);
 }
+

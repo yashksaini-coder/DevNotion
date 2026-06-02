@@ -2,17 +2,12 @@ import { createTool } from '@mastra/core/tools';
 import { Client } from '@notionhq/client';
 import { z } from 'zod';
 import { env } from '../config/env.js';
-import PQueue from 'p-queue';
-import pRetry from 'p-retry';
+import { notionLimiter } from '../utils/rate-limiter.js';
 
 const notion = new Client({ auth: env.NOTION_TOKEN });
 
-// Rate limiter: Notion API allows ~3 requests/second
-const queue = new PQueue({ concurrency: 1, interval: 334, intervalCap: 1 });
-
-async function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
-  return queue.add(() => pRetry(fn, { retries: 3 })) as Promise<T>;
-}
+// Use shared rate limiter (Notion API allows ~3 requests/second)
+const rateLimited = notionLimiter;
 
 export const searchNotionTool = createTool({
   id: 'notion-search-week',

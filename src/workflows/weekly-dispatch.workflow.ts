@@ -4,6 +4,8 @@ import { WeeklyDataSchema, type WeeklyData } from '../types/github.types.js';
 import { NarratorOutputSchema, type NarratorOutput } from '../types/blog.types.js';
 import { fetchWeeklyContributions } from '../tools/github.tool.js';
 import { parseFrontmatter } from '../utils/parse-frontmatter.js';
+import { createProvider } from '../llm/provider.js';
+import { buildNarratorSystemPrompt } from '../llm/system-prompt.js';
 
 // Combined schema: narrate → publish handoff (blog + raw data for planner tables)
 const NarrateOutputSchema = z.object({
@@ -68,19 +70,22 @@ const narrateStep = createStep({
   id: 'narrate',
   inputSchema: WeeklyDataSchema,
   outputSchema: NarrateOutputSchema,
-  execute: async ({ inputData, mastra }) => {
-    const agent = mastra!.getAgent('narrator-agent');
+  execute: async ({ inputData }) => {
+    const { env } = await import('../config/env.js');
     const dataJson = JSON.stringify(inputData, null, 2);
+
+    // Build system prompt dynamically so per-run tone/focus from dashboard is honored
+    const system = buildNarratorSystemPrompt(env.BLOG_TONE, env.FOCUS_AREAS);
     const prompt = `Generate a blog post from this GitHub contribution data:\n\n${dataJson}`;
 
     let blog: NarratorOutput['blog'];
 
-    // Attempt: plain text generation → parse frontmatter + markdown
     try {
-      const result = await agent.generate(prompt);
-      const parsed = parseFrontmatter(result.text);
+      const provider = createProvider(env);
+      const text = await provider.generate(prompt, { system, maxTokens: 4096, temperature: 0.7 });
+      const parsed = parseFrontmatter(text);
       if (parsed.success) {
-        console.log('Narrate step: Markdown blog generated successfully');
+        console.log(`Narrate step: Blog generated via ${provider.name}`);
         blog = parsed.data.blog;
       } else {
         console.warn('Narrate step: Failed to parse frontmatter:', parsed.error);
@@ -91,7 +96,6 @@ const narrateStep = createStep({
       blog = buildFallbackNarration(inputData).blog;
     }
 
-    // Pass through raw data for planner tables in publish step
     return { blog, weeklyData: inputData };
   },
 });
@@ -102,7 +106,8 @@ const narrateStep = createStep({
 function buildPlannerMarkdown(
   data: WeeklyData,
   blog: NarratorOutput['blog'],
-  links: { notionPageUrl?: string; devtoUrl?: string },
+  links: { notionPageUrl?: string; devtoUrl?: string; hashnodeUrl?: string },
+  publishMode: 'auto' | 'draft' = 'auto',
 ): string {
   const lines: string[] = [];
 
@@ -117,9 +122,14 @@ function buildPlannerMarkdown(
     lines.push(`| Notion | [View Page](${links.notionPageUrl}) | Published |`);
   }
   if (links.devtoUrl) {
-    lines.push(`| DEV.to | [Edit Draft](${links.devtoUrl}) | Draft |`);
+    const status = publishMode === 'draft' ? 'Draft' : 'Published';
+    lines.push(`| DEV.to | [${publishMode === 'draft' ? 'Edit Draft' : 'View Article'}](${links.devtoUrl}) | ${status} |`);
   } else {
     lines.push('| DEV.to | — | Not configured |');
+  }
+  if (links.hashnodeUrl) {
+    const status = publishMode === 'draft' ? 'Draft' : 'Published';
+    lines.push(`| Hashnode | [${publishMode === 'draft' ? 'View Draft' : 'View Article'}](${links.hashnodeUrl}) | ${status} |`);
   }
   lines.push('');
 
@@ -238,6 +248,7 @@ function buildDevtoMarkdown(blog: NarratorOutput['blog']): string {
 const PublishOutputSchema = z.object({
   notionPageUrl: z.string().optional(),
   devtoUrl: z.string().optional(),
+  hashnodeUrl: z.string().optional(),
   weekStart: z.string(),
   weekEnd: z.string(),
   headline: z.string(),
@@ -258,9 +269,11 @@ const publishStep = createStep({
   execute: async ({ inputData }) => {
     const { env } = await import('../config/env.js');
     const targets = env.PUBLISH_TARGETS;
+    const publishMode = env.PUBLISH_MODE;
+    const asDraft = publishMode === 'draft';
     const { blog, weeklyData } = inputData;
 
-    const links: { notionPageUrl?: string; devtoUrl?: string } = {};
+    const links: { notionPageUrl?: string; devtoUrl?: string; hashnodeUrl?: string } = {};
 
     // 1. Create Notion page (need pageId before writing content)
     let notionPageId: string | undefined;
@@ -274,7 +287,7 @@ const publishStep = createStep({
       console.log('Publish: Created Notion page:', links.notionPageUrl);
     }
 
-    // 2. Create DEV.to draft (so we can embed the link in the Notion planner)
+    // 2. Create DEV.to article (draft or published based on PUBLISH_MODE)
     if (targets.includes('devto') && env.DEVTO_API_KEY) {
       const { createDevtoArticle } = await import('../tools/devto.tool.js');
 
@@ -282,21 +295,38 @@ const publishStep = createStep({
         title: blog.headline,
         body_markdown: buildDevtoMarkdown(blog),
         tags: blog.tags,
-        published: false,
+        published: !asDraft,
+        canonical_url: links.notionPageUrl,
       });
       links.devtoUrl = devtoResult.articleUrl;
-      console.log('Publish: Created DEV.to draft:', links.devtoUrl);
+      console.log(`Publish: ${asDraft ? 'Created DEV.to draft' : 'Published DEV.to article'}:`, links.devtoUrl);
     }
 
-    // 3. Write planner-style markdown to Notion (includes DEV.to link)
+    // 3. Create Hashnode post (draft or published based on PUBLISH_MODE)
+    if (targets.includes('hashnode') && env.HASHNODE_TOKEN && env.HASHNODE_PUBLICATION_ID) {
+      const { publishToHashnode } = await import('../tools/hashnode.tool.js');
+
+      const hashnodeResult = await publishToHashnode({
+        title: blog.headline,
+        contentMarkdown: buildDevtoMarkdown(blog),
+        tags: blog.tags,
+        subtitle: blog.tldr,
+        draft: asDraft,
+      });
+      links.hashnodeUrl = hashnodeResult.postUrl;
+      console.log(`Publish: ${asDraft ? 'Created Hashnode draft' : 'Published Hashnode post'}:`, links.hashnodeUrl);
+    }
+
+    // 4. Write planner-style markdown to Notion (includes all platform links)
     if (notionPageId) {
       const { writeNotionMarkdown, updateNotionPage } = await import('../tools/notion-rest.tool.js');
 
-      const plannerMd = buildPlannerMarkdown(weeklyData, blog, links);
+      const plannerMd = buildPlannerMarkdown(weeklyData, blog, links, publishMode);
       await writeNotionMarkdown(notionPageId, plannerMd);
       console.log('Publish: Planner markdown written to Notion');
 
-      await updateNotionPage(notionPageId, '📊');
+      // Icon: 📝 for drafts, 📊 for published
+      await updateNotionPage(notionPageId, asDraft ? '📝' : '📊');
     }
 
     const topLangs = Object.entries(weeklyData.languages)
