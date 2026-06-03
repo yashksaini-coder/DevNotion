@@ -59,8 +59,9 @@ const EnvSchema = z.object({
   BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('casual'),
   FOCUS_AREAS: z.string().optional(), // e.g. "TypeScript performance,open source,API design"
 
-  // Behavior
-  PUBLISH_MODE: z.enum(['auto', 'draft']).default('auto'),
+  // Behavior — draft by default: every platform gets a draft for human review
+  // (publish on-platform). 'auto' opts into publishing live immediately.
+  PUBLISH_MODE: z.enum(['auto', 'draft']).default('draft'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   // Multi-platform publishing (optional — notion-only works without these)
