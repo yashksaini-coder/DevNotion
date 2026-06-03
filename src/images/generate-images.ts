@@ -39,7 +39,14 @@ export async function generateImages(
   }
 
   try {
-    const bytes = await generateCoverImage(blog);
+    const topRepo = [...data.repos].sort((a, b) => b.commits - a.commits)[0]?.name;
+    const languages = Object.entries(data.languages).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([l]) => l);
+    const bits: string[] = [];
+    if (data.totalPRs > 0) bits.push(`${data.totalPRs} PRs`);
+    if (data.totalIssues > 0) bits.push(`${data.totalIssues} issues open`);
+    if (data.totalReviews > 0) bits.push(`${data.totalReviews} code reviews`);
+    const highlight = bits.join(', ') || undefined;
+    const bytes = await generateCoverImage(blog, { topRepo, languages, highlight });
     if (bytes) {
       const rel = join(relDir, 'cover.png');
       writeFileSync(join(process.cwd(), rel), bytes);
