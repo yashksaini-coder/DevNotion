@@ -43,3 +43,4 @@ export function createRateLimiter(opts: RateLimiterOptions): RateLimitedFn {
 export const notionLimiter = createRateLimiter({ concurrency: 1, intervalMs: 334 });
 export const devtoLimiter = createRateLimiter({ concurrency: 1, intervalMs: 1000 });
 export const hashnodeLimiter = createRateLimiter({ concurrency: 1, intervalMs: 500 });
+export const githubLimiter = createRateLimiter({ concurrency: 1, intervalMs: 250 });

@@ -1,6 +1,13 @@
 import { GraphQLClient, gql } from 'graphql-request';
 import { env } from '../config/env.js';
 import { WeeklyDataSchema, type WeeklyData } from '../types/github.types.js';
+import {
+  fetchRepoCommitDetails,
+  fetchChangedPaths,
+  aggregateRepoCommits,
+  topTouchedAreas,
+} from './github-commits.js';
+import { githubLimiter } from '../utils/rate-limiter.js';
 
 const client = new GraphQLClient('https://api.github.com/graphql', {
   headers: { Authorization: `bearer ${env.GITHUB_TOKEN}` },
@@ -9,6 +16,7 @@ const client = new GraphQLClient('https://api.github.com/graphql', {
 const WEEKLY_CONTRIBUTIONS_QUERY = gql`
   query WeeklyContributions($username: String!, $from: DateTime!, $to: DateTime!) {
     user(login: $username) {
+      id
       contributionsCollection(from: $from, to: $to) {
         totalCommitContributions
         totalPullRequestContributions
@@ -26,6 +34,7 @@ const WEEKLY_CONTRIBUTIONS_QUERY = gql`
         commitContributionsByRepository {
           repository {
             name
+            nameWithOwner
             url
             primaryLanguage {
               name
@@ -52,7 +61,7 @@ const WEEKLY_CONTRIBUTIONS_QUERY = gql`
             }
           }
         }
-        issueContributions(last: 30) {
+        issueContributions(last: 50) {
           nodes {
             issue {
               title
@@ -63,7 +72,7 @@ const WEEKLY_CONTRIBUTIONS_QUERY = gql`
             }
           }
         }
-        pullRequestReviewContributions(last: 30) {
+        pullRequestReviewContributions(last: 50) {
           nodes {
             pullRequestReview {
               state
@@ -120,7 +129,8 @@ export async function fetchWeeklyContributions(weekStart: string): Promise<Weekl
   });
 
   const raw = transformGitHubResponse(data, weekStart, to.toISOString().split('T')[0]!);
-  return WeeklyDataSchema.parse(raw);
+  const enriched = await enrichWithCommitDetails(data, raw, from.toISOString(), to.toISOString());
+  return WeeklyDataSchema.parse(enriched);
 }
 
 export function transformGitHubResponse(
@@ -249,4 +259,71 @@ export function transformGitHubResponse(
     reviewsGiven: reviews.length,
     streakDays: streak,
   };
+}
+
+const MAX_DETAIL_REPOS = 8;
+const MAX_PATH_REPOS = 3;
+const MAX_PATH_COMMITS = 10;
+const MESSAGE_CAP = 6;
+
+/**
+ * Enrich base WeeklyData with real per-commit line deltas, commit messages,
+ * changed-file counts, and touched areas. Best-effort: any failure leaves the
+ * base (PR-derived) data intact for that repo. Recomputes line totals from repos.
+ */
+async function enrichWithCommitDetails(
+  rawResponse: any,
+  base: WeeklyData,
+  fromIso: string,
+  toIso: string,
+): Promise<WeeklyData> {
+  const authorId: string | undefined = rawResponse?.user?.id;
+  if (!authorId) return base;
+
+  const ownerByName = new Map<string, string>();
+  for (const entry of rawResponse.user.contributionsCollection.commitContributionsByRepository ?? []) {
+    const r = entry.repository;
+    if (r?.name && r?.nameWithOwner) ownerByName.set(r.name, r.nameWithOwner);
+  }
+
+  const detailRepos = [...base.repos].sort((a, b) => b.commits - a.commits).slice(0, MAX_DETAIL_REPOS);
+
+  for (const repo of base.repos) {
+    const nwo = ownerByName.get(repo.name);
+    const isDetail = detailRepos.includes(repo) && Boolean(nwo);
+    if (!isDetail) continue;
+    const [owner, name] = nwo!.split('/');
+    try {
+      const nodes = await githubLimiter(() =>
+        fetchRepoCommitDetails(owner!, name!, authorId, fromIso, toIso),
+      );
+      // Empty history (e.g. commits on a non-default branch) — keep the
+      // PR-derived deltas rather than zeroing them out.
+      if (nodes.length === 0) continue;
+
+      const agg = aggregateRepoCommits(nodes, MESSAGE_CAP);
+      repo.additions = agg.additions;
+      repo.deletions = agg.deletions;
+      repo.changedFiles = agg.changedFiles;
+      repo.commitMessages = agg.commitMessages;
+
+      const repoRank = detailRepos.indexOf(repo);
+      if (repoRank < MAX_PATH_REPOS) {
+        const shas = nodes.slice(0, MAX_PATH_COMMITS).map((n) => n.oid);
+        const paths = await githubLimiter(() => fetchChangedPaths(owner!, name!, shas));
+        if (paths.length) repo.touchedAreas = topTouchedAreas(paths, 4);
+      }
+    } catch {
+      // best-effort — keep base values for this repo
+    }
+  }
+
+  let totalAdditions = 0;
+  let totalDeletions = 0;
+  for (const repo of base.repos) {
+    totalAdditions += repo.additions;
+    totalDeletions += repo.deletions;
+  }
+
+  return { ...base, totalAdditions, totalDeletions };
 }
