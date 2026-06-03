@@ -1,0 +1,83 @@
+import { describe, it, expect } from 'vitest';
+import { buildDevtoMarkdown, buildPlannerMarkdown } from '../publish/publish-content.js';
+import { renderAuthorFooter } from '../publish/footer.js';
+import type { WeeklyData } from '../types/github.types.js';
+
+const blog = {
+  headline: 'Shipped the spine',
+  tldr: 'A solid week.',
+  content: '## TL;DR\nReal content here.',
+  tags: ['typescript', 'devtools'],
+  readingTimeMinutes: 3,
+};
+
+const data = {
+  weekStart: '2026-05-27',
+  weekEnd: '2026-06-03',
+  totalCommits: 12,
+  totalPRs: 0,
+  totalAdditions: 0,
+  totalDeletions: 0,
+  totalIssues: 50,
+  totalReviews: 0,
+  totalDiscussions: 0,
+  repos: [{ name: 'trx', url: 'https://github.com/x/trx', commits: 10, additions: 0, deletions: 0, language: 'Rust' }],
+  pullRequests: [],
+  issues: [],
+  reviews: [],
+  discussions: [],
+  languages: { Rust: 1000, TypeScript: 500 },
+  reviewsGiven: 0,
+  streakDays: 5,
+} as unknown as WeeklyData;
+
+describe('buildDevtoMarkdown', () => {
+  it('includes the tldr and content and a DevNotion footer', () => {
+    const md = buildDevtoMarkdown(blog);
+    expect(md).toContain('A solid week.');
+    expect(md).toContain('Real content here.');
+    expect(md).toContain('DevNotion');
+  });
+});
+
+describe('buildPlannerMarkdown', () => {
+  it('renders the stats table and a published Notion link when provided', () => {
+    const md = buildPlannerMarkdown(data, blog, { notionPageUrl: 'https://notion.so/x' }, 'auto');
+    expect(md).toContain('Week at a Glance');
+    expect(md).toContain('| Commits | 12 |');
+    expect(md).toContain('https://notion.so/x');
+    expect(md).toContain('Blog Post');
+  });
+
+  it('marks DEV.to as Draft when publishMode is draft', () => {
+    const md = buildPlannerMarkdown(data, blog, { devtoUrl: 'https://dev.to/x' }, 'draft');
+    expect(md).toContain('Draft');
+  });
+
+  it('embeds image URLs in the planner when provided', () => {
+    const md = buildPlannerMarkdown(data, blog, {}, 'auto', { coverUrl: 'https://x/cover.png', statsCardUrl: 'https://x/stats.png' });
+    expect(md).toContain('![cover](https://x/cover.png)');
+    expect(md).toContain('![week stats](https://x/stats.png)');
+  });
+});
+
+describe('author footer in builders', () => {
+  it('buildDevtoMarkdown includes the author footer', () => {
+    const md = buildDevtoMarkdown(blog);
+    expect(md).toContain('Yash K Saini');
+    expect(md).toContain('[GitHub](https://github.com/yashksaini-coder)');
+  });
+
+  it('buildPlannerMarkdown includes the author footer', () => {
+    const md = buildPlannerMarkdown(data, blog, { notionPageUrl: 'https://notion.so/x' }, 'auto');
+    expect(md).toContain('[Portfolio](https://yashksaini.vercel.app/)');
+  });
+
+  it('renderAuthorFooter default config has the four configured links', () => {
+    const md = renderAuthorFooter();
+    expect(md).toContain('[GitHub]');
+    expect(md).toContain('[X]');
+    expect(md).toContain('[LinkedIn]');
+    expect(md).toContain('[Portfolio]');
+  });
+});
