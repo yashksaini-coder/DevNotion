@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import type { WeeklyData } from '../types/github.types.js';
 
 export interface RunRecord {
   jobId: string;
   weekStart: string;
   tone: string;
   focusAreas: string;
-  status: 'pending' | 'running' | 'preview' | 'published' | 'failed';
+  status: 'pending' | 'running' | 'preview' | 'publishing' | 'published' | 'failed';
   createdAt: string;
   completedAt?: string;
   error?: string;
@@ -26,9 +27,11 @@ export interface RunRecord {
     repoCount: number;
   };
   editedContent?: string; // user edits before publish
+  weeklyData?: WeeklyData; // full harvested data, needed to publish after approval
+  images?: { coverPath?: string; statsCardPath?: string };
 }
 
-const STORE_PATH = join(process.cwd(), '.devnotion-runs.json');
+const STORE_PATH = process.env.DEVNOTION_RUNS_PATH ?? join(process.cwd(), '.devnotion-runs.json');
 
 function loadStore(): RunRecord[] {
   if (!existsSync(STORE_PATH)) return [];
