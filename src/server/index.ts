@@ -1,5 +1,7 @@
 import express from 'express';
+import { join } from 'node:path';
 import { env } from '../config/env.js';
+import { STYLES } from './views/layout.js';
 import { authMiddleware } from './middleware/auth.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { runRouter } from './routes/run.js';
@@ -11,38 +13,38 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+// Serve generated images (no auth — needed for preview <img> and embeds)
+app.use('/generated', express.static(join(process.cwd(), 'assets', 'generated')));
+
 // Optional auth (login page — only if DASHBOARD_TOKEN is set)
 app.get('/login', (req, res) => {
   if (!env.DASHBOARD_TOKEN) {
     res.redirect('/');
     return;
   }
-  const redirect = (req.query.redirect as string) ?? '/';
+  const redirectRaw = (req.query.redirect as string) ?? '/';
+  const redirect = redirectRaw.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   res.send(/* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login · DevNotion</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f0f; color: #e5e5e5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .card { background: #18181b; border: 1px solid #27272a; border-radius: 0.75rem; padding: 2rem; width: 320px; }
-    h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; }
-    label { display: block; font-size: 0.875rem; color: #a1a1aa; margin-bottom: 0.4rem; }
-    input { width: 100%; background: #0f0f0f; border: 1px solid #27272a; border-radius: 0.5rem; padding: 0.6rem 0.75rem; color: #e5e5e5; font-size: 0.9rem; outline: none; margin-bottom: 1rem; }
-    input:focus { border-color: #6366f1; }
-    button { width: 100%; background: #6366f1; color: #fff; border: none; padding: 0.6rem; border-radius: 0.5rem; font-size: 0.9rem; cursor: pointer; }
-    button:hover { opacity: 0.85; }
-  </style>
+  <style>${STYLES}</style>
 </head>
 <body>
-  <div class="card">
-    <h1>📊 DevNotion</h1>
-    <form method="POST" action="/login">
-      <input type="hidden" name="redirect" value="${redirect}">
-      <label>Access Token</label>
-      <input type="password" name="token" placeholder="Enter dashboard token" required autofocus>
-      <button type="submit">Login</button>
-    </form>
+  <div style="display:flex;align-items:center;justify-content:center;min-height:80vh">
+    <div class="card" style="width:320px">
+      <h1 style="font-size:1.25rem;font-weight:700;margin-bottom:1.5rem;text-align:center">📊 DevNotion</h1>
+      <form method="POST" action="/login">
+        <input type="hidden" name="redirect" value="${redirect}">
+        <div class="field">
+          <label>Access Token</label>
+          <input type="password" name="token" placeholder="Enter dashboard token" required autofocus>
+        </div>
+        <button class="btn btn-primary" style="width:100%" type="submit">Login</button>
+      </form>
+    </div>
   </div>
 </body>
 </html>`);
