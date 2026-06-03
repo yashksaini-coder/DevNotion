@@ -3,7 +3,7 @@
  * Shared between the Mastra agent definition and the workflow's direct LLM call.
  */
 
-type BlogTone = 'professional' | 'casual' | 'technical' | 'storytelling';
+export type BlogTone = 'professional' | 'casual' | 'technical' | 'storytelling';
 
 const TONE_PROFILES: Record<BlogTone, string> = {
   professional: `TONE: The Confident Builder
@@ -68,6 +68,8 @@ WRITING PHILOSOPHY
 
 5. **Respect the reader's time.** TL;DR delivers the headline stat and the week's vibe in two sentences. The rest of the post goes deeper — but always conversational, never padded.
 
+6. **Use the diff, not just the title.** When a repo has commitMessages or touchedAreas, ground the story in them: "spent the week in \`src/auth\` — 340 lines removed as I tore out the old session flow" beats "worked on auth." Cite real changed-file counts and line deltas when they tell a story. Never invent paths or messages not present in the data.
+
 ═══════════════════════════════════════
 BLOG STRUCTURE
 ═══════════════════════════════════════
@@ -75,8 +77,7 @@ BLOG STRUCTURE
 These are sections, not a rigid template. Let them flow naturally. CRITICAL: If a section would have zero items, OMIT it entirely — never pad with "nothing this week."
 
 ### 1. TL;DR — Always present
-Open with something that hooks. A punchy take on the week, a surprising number, something real. Then the stats:
-"{N} commits, {M} PRs, {I} issues, {R} reviews across {repos} repos — {what the week was really about}."
+Open with a hook that captures the week's CHARACTER, not a stat line. One vivid sentence about what the week was really about, THEN fold the numbers into a second sentence. Vary your openings across weeks — never start with "This week" two posts in a row. Bad: "This week I made 47 commits." Good: "Spent the week tearing out the old session layer — 47 commits, mostly deletions, and the codebase breathes easier for it."
 
 ### 2. WHAT I BUILT — Present if repos.length > 0
 The meat of the post. For each repo, talk about what I actually did, why, and what was tricky.
@@ -129,6 +130,7 @@ The headline should feel like something I'd actually title my own blog post. Lea
 - Domain: "Deep in p2p networking and SDK reliability this week"
 - Thematic: "Mostly reviewing this week (and that's fine)"
 - Exploratory: "First time touching {area} — here's what I learned"
+- Prefer the touched areas and commit themes for specificity: "A week deep in src/server — rebuilt the dashboard pipeline" reads better than a generic verb. Use real area/feature names from the data, never invented ones.
 
 Never fabricate feature names. Infer from PR titles and repo names.
 
@@ -142,6 +144,7 @@ CRAFT TECHNIQUES
 - **Be specific**: "Reviewed 4 PRs on the auth module" beats "did some code reviews."
 - **Dev empathy**: One relatable line per post — "we've all stared at a failing test for twenty minutes before realizing the mock was never updated."
 - **Rhythm**: Vary sentence length. Short ones punch. Longer ones carry the thought through to the landing.
+- **No stat dumping**: never list raw metrics in a row. Every number must earn its place inside a sentence that says something. If a stat doesn't advance the story, cut it — the planner tables already hold the full data.
 
 ═══════════════════════════════════════
 TAG SELECTION
@@ -163,7 +166,10 @@ Estimate ~1 min per 250 words. Write at least 600 words, up to 2000. More data =
 INPUT DATA REFERENCE
 ═══════════════════════════════════════
 
-- repos[]: { name, url, commits, additions, deletions, language }
+- repos[]: { name, url, commits, additions, deletions, language, changedFiles?, commitMessages?[], touchedAreas?[] }
+  - additions/deletions are REAL per-repo line deltas from commits (not PR-only)
+  - commitMessages: first lines of actual commits — use them for specifics
+  - touchedAreas: top directories changed (e.g. "src/auth") — name the areas you worked in
 - pullRequests[]: { title, url, repo, state (OPEN/MERGED/CLOSED), additions, deletions, mergedAt }
 - issues[]: { title, url, repo, state (OPEN/CLOSED), createdAt }
 - reviews[]: { prTitle, prUrl, repo, state, submittedAt }

@@ -3,8 +3,9 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import type { Env } from '../config/env.js';
+import { resolveModelId, type LLMProviderName } from './models.js';
 
-export type LLMProviderName = 'gemini' | 'openai' | 'anthropic';
+export type { LLMProviderName };
 
 export interface GenerateOptions {
   system?: string;
@@ -17,12 +18,6 @@ export interface LLMProvider {
   generate(prompt: string, options?: GenerateOptions): Promise<string>;
 }
 
-// Default models per provider — overridable via env
-const DEFAULT_MODELS: Record<LLMProviderName, string> = {
-  gemini: 'gemini-2.0-flash',
-  openai: 'gpt-4o-mini',
-  anthropic: 'claude-3-5-haiku-20241022',
-};
 
 function createGeminiProvider(env: Env): LLMProvider {
   // Round-robin across multiple API keys for quota distribution
@@ -35,7 +30,7 @@ function createGeminiProvider(env: Env): LLMProvider {
     return key;
   }
 
-  const modelId = env.LLM_MODEL ?? DEFAULT_MODELS.gemini;
+  const modelId = resolveModelId({ LLM_PROVIDER: 'gemini', LLM_MODEL: env.LLM_MODEL });
 
   return {
     name: 'gemini',
@@ -45,7 +40,7 @@ function createGeminiProvider(env: Env): LLMProvider {
         model: google(modelId),
         system: opts?.system,
         prompt,
-        maxOutputTokens: opts?.maxTokens,
+        maxOutputTokens: opts?.maxTokens ?? 8192,
         temperature: opts?.temperature,
       });
       return text;
@@ -56,7 +51,7 @@ function createGeminiProvider(env: Env): LLMProvider {
 function createOpenAIProvider(env: Env): LLMProvider {
   if (!env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is required when LLM_PROVIDER=openai');
   const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
-  const modelId = env.LLM_MODEL ?? DEFAULT_MODELS.openai;
+  const modelId = resolveModelId({ LLM_PROVIDER: 'openai', LLM_MODEL: env.LLM_MODEL });
 
   return {
     name: 'openai',
@@ -65,7 +60,7 @@ function createOpenAIProvider(env: Env): LLMProvider {
         model: openai(modelId),
         system: opts?.system,
         prompt,
-        maxOutputTokens: opts?.maxTokens,
+        maxOutputTokens: opts?.maxTokens ?? 8192,
         temperature: opts?.temperature,
       });
       return text;
@@ -77,7 +72,7 @@ function createAnthropicProvider(env: Env): LLMProvider {
   if (!env.ANTHROPIC_API_KEY)
     throw new Error('ANTHROPIC_API_KEY is required when LLM_PROVIDER=anthropic');
   const anthropic = createAnthropic({ apiKey: env.ANTHROPIC_API_KEY });
-  const modelId = env.LLM_MODEL ?? DEFAULT_MODELS.anthropic;
+  const modelId = resolveModelId({ LLM_PROVIDER: 'anthropic', LLM_MODEL: env.LLM_MODEL });
 
   return {
     name: 'anthropic',
@@ -86,7 +81,7 @@ function createAnthropicProvider(env: Env): LLMProvider {
         model: anthropic(modelId),
         system: opts?.system,
         prompt,
-        maxOutputTokens: opts?.maxTokens,
+        maxOutputTokens: opts?.maxTokens ?? 8192,
         temperature: opts?.temperature,
       });
       return text;
