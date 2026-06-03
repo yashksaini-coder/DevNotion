@@ -54,7 +54,11 @@ runRouter.get('/', (_req, res) => {
 
 // POST /run — trigger the pipeline and redirect to preview
 runRouter.post('/', async (req, res) => {
-  const weekStart: string = req.body.weekStart ?? getLastMonday();
+  // weekStart flows into a filesystem path (generated images) — accept only a
+  // strict YYYY-MM-DD date, otherwise fall back to the last Monday.
+  const rawWeek: unknown = req.body.weekStart;
+  const weekStart: string =
+    typeof rawWeek === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawWeek) ? rawWeek : getLastMonday();
   const tone: string = req.body.tone ?? env.BLOG_TONE;
   const focusAreas: string = req.body.focusAreas ?? '';
 

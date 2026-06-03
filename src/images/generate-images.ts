@@ -19,6 +19,12 @@ export async function generateImages(
   data: WeeklyData,
   blog: NarratorOutput['blog'],
 ): Promise<GeneratedImages> {
+  // Defense-in-depth: weekStart is used as a path segment — only allow YYYY-MM-DD
+  // so it can never contain path separators or `..` (path traversal).
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+    console.warn('Image generation skipped: invalid weekStart format:', weekStart);
+    return {};
+  }
   const relDir = join('assets', 'generated', weekStart);
   const absDir = join(process.cwd(), relDir);
   const out: GeneratedImages = {};
