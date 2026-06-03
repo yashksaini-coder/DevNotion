@@ -30,3 +30,21 @@ export const author: AuthorConfig = {
   },
   previousWork: [],
 };
+
+export const repoUrl = 'https://github.com/yashksaini-coder/DevNotion';
+
+export interface SocialLink {
+  key: 'repo' | 'github' | 'x' | 'linkedin' | 'website';
+  label: string;
+  url: string;
+}
+
+/** Single source of truth for the repo + author social links (only present ones). */
+export function socialLinks(): SocialLink[] {
+  const out: SocialLink[] = [{ key: 'repo', label: 'GitHub Repo', url: repoUrl }];
+  if (author.links.github) out.push({ key: 'github', label: 'GitHub', url: author.links.github });
+  if (author.links.x) out.push({ key: 'x', label: 'X', url: author.links.x });
+  if (author.links.linkedin) out.push({ key: 'linkedin', label: 'LinkedIn', url: author.links.linkedin });
+  if (author.links.website) out.push({ key: 'website', label: 'Portfolio', url: author.links.website });
+  return out;
+}

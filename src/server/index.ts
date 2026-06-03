@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { env } from '../config/env.js';
 import { STYLES } from './views/layout.js';
 import { authMiddleware } from './middleware/auth.js';
+import { landingRouter } from './routes/landing.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { runRouter } from './routes/run.js';
 import { previewRouter } from './routes/preview.js';
@@ -16,10 +17,13 @@ app.use(express.json());
 // Serve generated images (no auth — needed for preview <img> and embeds)
 app.use('/generated', express.static(join(process.cwd(), 'assets', 'generated')));
 
+// Public landing page (no auth)
+app.use('/', landingRouter);
+
 // Optional auth (login page — only if DASHBOARD_TOKEN is set)
 app.get('/login', (req, res) => {
   if (!env.DASHBOARD_TOKEN) {
-    res.redirect('/');
+    res.redirect('/runs');
     return;
   }
   const redirectRaw = (req.query.redirect as string) ?? '/';
@@ -52,7 +56,7 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { token, redirect } = req.body as { token?: string; redirect?: string };
-  const target = redirect ?? '/';
+  const target = redirect ?? '/runs';
   if (token === env.DASHBOARD_TOKEN) {
     // Redirect with token as query param (simple stateless auth for single-user dashboard)
     const url = new URL(target, `http://localhost:${env.DASHBOARD_PORT}`);
@@ -67,7 +71,7 @@ app.post('/login', (req, res) => {
 app.use(authMiddleware);
 
 // Routes
-app.use('/', dashboardRouter);
+app.use('/runs', dashboardRouter);
 app.use('/run', runRouter);
 app.use('/preview', previewRouter);
 
@@ -76,7 +80,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', version: '2.0.0' }));
 
 // 404 fallback
 app.use((_req, res) => {
-  res.status(404).send('<h1>404 — Page not found</h1><p><a href="/">← Back to Dashboard</a></p>');
+  res.status(404).send('<h1>404 — Page not found</h1><p><a href="/runs">← Back to Dashboard</a></p>');
 });
 
 export function startServer(): void {
