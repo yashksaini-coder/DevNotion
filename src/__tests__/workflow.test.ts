@@ -6,10 +6,7 @@ describe('weeklyDispatchWorkflow', () => {
     expect(weeklyDispatchWorkflow.id).toBe('weekly-dispatch');
   });
 
-  it('includes all 4 steps in correct order', () => {
-    // Access the workflow steps
-    const steps = (weeklyDispatchWorkflow as any).steps;
-    // The workflow should have steps defined
+  it('is a committed, defined workflow', () => {
     expect(weeklyDispatchWorkflow).toBeDefined();
   });
 });
