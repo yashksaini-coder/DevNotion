@@ -26,6 +26,13 @@ const EnvSchema = z.object({
   // LLM Provider — defaults to gemini for backward compatibility
   LLM_PROVIDER: z.enum(['gemini', 'openai', 'anthropic']).default('gemini'),
   LLM_MODEL: z.string().optional(), // optional model override per provider
+  // Max output tokens for narration (Gemini 3 is a thinking model — reasoning
+  // tokens count against this, so keep it generous).
+  NARRATION_MAX_TOKENS: z.coerce.number().int().min(512).max(32768).default(8192),
+
+  // Image generation
+  GENERATE_IMAGES: z.coerce.boolean().default(true),
+  IMAGE_PUBLIC_BASE_URL: z.string().optional(), // e.g. raw repo URL base; when set, images attach on publish
 
   // Google (Gemini) — required when LLM_PROVIDER=gemini
   GOOGLE_API_KEYS: z
@@ -47,13 +54,12 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
 
   // Narration options
-  NARRATOR_MODEL: z.string().default('gemini-2.0-flash'),
-  UTILITY_MODEL: z.string().default('gemini-2.0-flash'),
+  NARRATOR_MODEL: z.string().default('gemini-3-flash-preview'),
+  UTILITY_MODEL: z.string().default('gemini-3-flash-preview'),
   BLOG_TONE: z.enum(['professional', 'casual', 'technical', 'storytelling']).default('casual'),
   FOCUS_AREAS: z.string().optional(), // e.g. "TypeScript performance,open source,API design"
 
   // Behavior
-  AUTO_PUBLISH: z.coerce.boolean().default(true),
   PUBLISH_MODE: z.enum(['auto', 'draft']).default('auto'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
