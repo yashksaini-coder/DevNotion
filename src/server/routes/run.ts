@@ -82,7 +82,8 @@ async function runGenerateBackground(
   focusAreas: string,
 ): Promise<void> {
   const { generateContent } = await import('../../pipeline/generate.js');
-  const { updateRun } = await import('../store.js');
+  const { updateRun, nextDevLogNumber } = await import('../store.js');
+  const { formatDevLogTitle } = await import('../../publish/title.js');
 
   const { blog, weeklyData, images } = await generateContent({
     weekStart,
@@ -95,13 +96,17 @@ async function runGenerateBackground(
     .slice(0, 5)
     .map(([l]) => l);
 
+  const devLogNumber = nextDevLogNumber();
+  const headline = formatDevLogTitle(devLogNumber, blog.headline);
+
   updateRun(jobId, {
     status: 'preview',
     completedAt: new Date().toISOString(),
     weeklyData,
     images,
+    devLogNumber,
     result: {
-      headline: blog.headline,
+      headline,
       tldr: blog.tldr,
       content: blog.content,
       tags: blog.tags.length ? blog.tags : topLanguages,
@@ -129,7 +134,7 @@ runRouter.post('/publish/:jobId', async (req, res) => {
   const jobId = req.params.jobId!;
   const run = getRun(jobId);
   if (!run || run.status !== 'preview' || !run.result || !run.weeklyData) {
-    res.status(400).send('<h1>Run not ready to publish</h1><p><a href="/">← Back</a></p>');
+    res.status(400).send('<h1>Run not ready to publish</h1><p><a href="/runs">← Back</a></p>');
     return;
   }
 

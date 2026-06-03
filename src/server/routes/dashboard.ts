@@ -1,5 +1,5 @@
 import { Router, type IRouter } from 'express';
-import { listRuns } from '../store.js';
+import { listRuns, deleteRun, deleteRuns } from '../store.js';
 import { env } from '../../config/env.js';
 import { page } from '../views/layout.js';
 
@@ -34,11 +34,13 @@ dashboardRouter.get('/', (_req, res) => {
 
       return `
         <tr>
+          <td><input type="checkbox" name="ids" value="${run.jobId}" aria-label="Select run" style="width:auto"></td>
           <td>${new Date(run.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
           <td><code>${run.weekStart}</code></td>
           <td>${run.result?.headline ? `<span title="${run.result.headline}">${run.result.headline.slice(0, 55)}${run.result.headline.length > 55 ? '…' : ''}</span>` : '—'}</td>
           <td>${statusBadge[run.status] ?? run.status}</td>
           <td>${links || previewLink || '—'}</td>
+          <td><button type="submit" formaction="/runs/${run.jobId}/delete" formmethod="post" onclick="return confirm('Delete this run?')" class="btn btn-sm" style="border-color:var(--red);color:var(--red)" aria-label="Delete run">✕</button></td>
         </tr>`;
     })
     .join('');
@@ -48,19 +50,40 @@ dashboardRouter.get('/', (_req, res) => {
     <div class="card">
       <h2>Run History</h2>
       ${runs.length === 0 ? '<div class="empty">No runs yet — <a href="/run">start your first run</a></div>' : `
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Week</th>
-            <th>Headline</th>
-            <th>Status</th>
-            <th>Links</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>`}
+      <form method="POST" action="/runs/delete">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:1.5rem"></th>
+              <th>Date</th>
+              <th>Week</th>
+              <th>Headline</th>
+              <th>Status</th>
+              <th>Links</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:1.25rem">
+          <button type="submit" class="btn btn-sm" onclick="return confirm('Delete the selected runs?')">Delete selected</button>
+        </div>
+      </form>`}
     </div>`;
 
   res.send(page({ title: 'DevNotion Dashboard', activeNav: 'history', body }));
+});
+
+// POST /runs/delete — delete the selected runs (checkbox multi-select)
+dashboardRouter.post('/delete', (req, res) => {
+  const raw = (req.body as { ids?: string | string[] }).ids;
+  const ids = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  deleteRuns(ids);
+  res.redirect('/runs');
+});
+
+// POST /runs/:jobId/delete — delete a single run
+dashboardRouter.post('/:jobId/delete', (req, res) => {
+  deleteRun(req.params.jobId!);
+  res.redirect('/runs');
 });
