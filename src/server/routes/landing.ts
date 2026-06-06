@@ -82,7 +82,7 @@ export function buildLandingPage(): string {
       <div class="flow">
         <div class="step"><div class="n">01</div><h3>Harvest</h3><p>GitHub GraphQL — commits, PRs, diffs, touched areas.</p></div>
         <div class="step"><div class="n">02</div><h3>Narrate</h3><p>Gemini 3 writes a first-person post. Fail-loud.</p></div>
-        <div class="step"><div class="n">03</div><h3>Illustrate</h3><p>An AI cover + a deterministic stats card.</p></div>
+        <div class="step"><div class="n">03</div><h3>Illustrate</h3><p>A deterministic stats card, used as the cover.</p></div>
         <div class="step"><div class="n">04</div><h3>Publish</h3><p>Notion · DEV.to · Hashnode — on your approval.</p></div>
       </div>
 

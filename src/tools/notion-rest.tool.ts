@@ -144,9 +144,13 @@ export async function writeNotionMarkdown(pageId: string, markdown: string) {
   }
 }
 
-export async function updateNotionPage(pageId: string, icon?: string) {
+export async function updateNotionPage(pageId: string, icon?: string, coverUrl?: string) {
   const updateData: any = {};
   if (icon) updateData.icon = { type: 'emoji', emoji: icon };
+  // Notion external covers require a publicly reachable https URL.
+  if (coverUrl && /^https:\/\//.test(coverUrl)) {
+    updateData.cover = { type: 'external', external: { url: coverUrl } };
+  }
   await rateLimited(() => notion.pages.update({ page_id: pageId, ...updateData }));
 }
 

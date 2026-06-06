@@ -12,7 +12,7 @@ DevNotion is a [Mastra](https://mastra.ai) pipeline of specialist agents: it har
 | **Publish targets** | Notion + DEV.to | Notion + DEV.to + **Hashnode** |
 | **Flow** | generate → publish immediately | **generate → preview → edit → approve → publish** |
 | **UI** | none (CLI/cron) | **web dashboard** (trigger, preview, edit, history) |
-| **Images** | none | **AI cover (Nano Banana) + deterministic stats card** |
+| **Images** | none | **deterministic stats card, doubling as the cover/social image** |
 | **Harvest** | PR-only line stats | **real per-commit deltas, changed files, touched areas** |
 | **Footer** | none | **author/social footer** on every post |
 | **Failure** | silent fallback could publish a stub | **fail-loud** — a bad run publishes nothing |
@@ -20,26 +20,26 @@ DevNotion is a [Mastra](https://mastra.ai) pipeline of specialist agents: it har
 
 ## Architecture
 
-Four specialist agents across a pipeline that is split so generation and publishing are decoupled — a failure or an unreviewed draft never reaches your readers.
+Three specialist agents across a pipeline that is split so generation and publishing are decoupled — a failure or an unreviewed draft never reaches your readers.
 
 ```mermaid
 flowchart TD
     A["weekStart"] --> H["1 · Harvest Agent<br/>(deterministic · GitHub GraphQL)<br/>+ per-commit deltas, touched areas"]
     H --> N["2 · Narrator Agent<br/>(gemini-3-flash-preview)<br/>fail-loud: error → run fails, nothing published"]
-    N --> I["3 · Image Agent<br/>(Nano Banana cover + deterministic stats card)"]
+    N --> I["Stats card<br/>(deterministic SVG → PNG · used as the cover)"]
     I --> P["draft persisted"]
     P --> G{"Approval gate<br/>(dashboard: preview · edit · approve)"}
-    G -->|approve| PUB["4 · Publisher Agent<br/>Notion · DEV.to · Hashnode<br/>+ author/social footer"]
+    G -->|approve| PUB["3 · Publisher Agent<br/>Notion · DEV.to · Hashnode<br/>+ author/social footer"]
 ```
 
-The pipeline only uses an LLM where it adds value (narration, cover). Harvest, the stats card, and publishing are deterministic — no token overhead, no hallucinated numbers.
+The pipeline only uses an LLM where it adds value (narration). Harvest, the stats card, and publishing are deterministic — no token overhead, no hallucinated numbers.
 
 ## Key features
 
 - **Multi-LLM** — set `LLM_PROVIDER=gemini|openai|anthropic`. Default model is `gemini-3-flash-preview` (free tier eligible). One source of truth for model selection.
 - **Preview → edit → publish gate** — the dashboard generates a draft, shows it (with images) for review and in-browser markdown editing, and publishes only on **Approve**. The headless/cron path can default to drafts.
 - **Diff-enriched harvest** — real per-repo/commit line deltas, changed-file counts, commit messages, and the top directories you touched (e.g. `src/server`) — so the narration is specific, not generic.
-- **Images** — an AI cover via `gemini-2.5-flash-image` ("Nano Banana"), plus a deterministic stats card (SVG → PNG) with the week's exact numbers. Image generation is best-effort and never blocks a run.
+- **Cover image** — a deterministic stats card (SVG → PNG, 1200×630) rendered locally from the week's exact numbers, used as the cover/social image on every target (DEV.to `main_image`, Hashnode cover, Notion page cover). No API, no quota — best-effort and never blocks a run.
 - **Author/social footer** — name, bio, and links rendered on every post from one config (`src/config/author.ts`).
 - **Fail-loud** — if narration hits a quota/parse error, the run is marked failed and nothing is published (no silent fallback stub).
 - **Rate-limited & resilient** — `p-queue` + `p-retry` wrappers per API (Notion, DEV.to, Hashnode, GitHub).
@@ -95,7 +95,7 @@ BLOG_TONE=casual                     # casual | professional | technical | story
 # DASHBOARD_TOKEN=                   # optional bearer token to protect the dashboard
 ```
 
-> **Note on images:** the AI cover uses `gemini-2.5-flash-image`, which needs image-generation quota (billing) on your Google project; without it the cover is skipped gracefully and the deterministic stats card is still produced.
+> **Note on images:** the cover/social image is a deterministic stats card rendered locally (resvg) — no API or quota needed. Set `IMAGE_PUBLIC_BASE_URL` to a public base (e.g. the raw repo URL) so the card resolves to a public URL and attaches as the cover on DEV.to/Hashnode/Notion; without it the card is still generated locally but not attached.
 
 ## Blog Tone Profiles
 
@@ -109,8 +109,8 @@ BLOG_TONE=casual                     # casual | professional | technical | story
 ## Tech Stack
 
 - **[Mastra](https://mastra.ai)** — agent/workflow framework (+ Notion MCP in the playground)
-- **[Vercel AI SDK](https://ai-sdk.dev)** — unified LLM + image generation (`@ai-sdk/google` · `openai` · `anthropic`)
-- **Gemini 3 Flash** (narration) · **Nano Banana** (cover) · **@resvg/resvg-js** (stats card)
+- **[Vercel AI SDK](https://ai-sdk.dev)** — unified LLM interface (`@ai-sdk/google` · `openai` · `anthropic`)
+- **Gemini 3 Flash** (narration) · **@resvg/resvg-js** (deterministic stats-card cover)
 - **[Notion API](https://developers.notion.com)** · **[DEV.to API](https://developers.forem.com/api)** · **[Hashnode GraphQL](https://apidocs.hashnode.com/)**
 - **Express** dashboard · **Zod** · **Vitest** · **GitHub Actions** (weekly cron + manual dispatch)
 

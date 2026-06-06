@@ -28,7 +28,7 @@ export interface RunRecord {
   };
   editedContent?: string; // user edits before publish
   weeklyData?: WeeklyData; // full harvested data, needed to publish after approval
-  images?: { coverPath?: string; statsCardPath?: string };
+  images?: { statsCardPath?: string };
   devLogNumber?: number; // sequential "Dev log #n" number
 }
 

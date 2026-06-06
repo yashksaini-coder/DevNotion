@@ -38,14 +38,11 @@ export function buildPlannerMarkdown(
   blog: NarratorOutput['blog'],
   links: PublishLinks,
   publishMode: 'auto' | 'draft' = 'auto',
-  imageUrls: { coverUrl?: string; statsCardUrl?: string } = {},
 ): string {
   const lines: string[] = [];
 
   lines.push(`> ${blog.tldr}`);
   lines.push('');
-  if (imageUrls.coverUrl) { lines.push(`![cover](${imageUrls.coverUrl})`); lines.push(''); }
-  if (imageUrls.statsCardUrl) { lines.push(`![week stats](${imageUrls.statsCardUrl})`); lines.push(''); }
 
   // Published links
   lines.push('## Published Links');
@@ -180,11 +177,11 @@ export async function publishBlog(opts: {
   blog: NarratorOutput['blog'];
   weeklyData: WeeklyData;
   publishMode: 'auto' | 'draft';
-  images?: { coverPath?: string; statsCardPath?: string };
+  images?: { statsCardPath?: string };
 }): Promise<PublishResult> {
   const { env } = await import('../config/env.js');
   const { blog, weeklyData, publishMode } = opts;
-  const coverUrl = publicImageUrl(opts.images?.coverPath);
+  // The deterministic stats card is the single cover/social image on every target.
   const statsCardUrl = publicImageUrl(opts.images?.statsCardPath);
   const targets = env.PUBLISH_TARGETS;
   const asDraft = publishMode === 'draft';
@@ -209,7 +206,7 @@ export async function publishBlog(opts: {
       tags: [], // tags added manually on-platform (drafts), not auto-applied
       published: !asDraft,
       canonical_url: links.notionPageUrl,
-      main_image: coverUrl,
+      main_image: statsCardUrl,
     });
     links.devtoUrl = devtoResult.articleUrl;
     console.log(`Publish: ${asDraft ? 'Created DEV.to draft' : 'Published DEV.to article'}:`, links.devtoUrl);
@@ -223,7 +220,7 @@ export async function publishBlog(opts: {
       tags: [], // tags added manually on-platform (drafts), not auto-applied
       subtitle: blog.tldr,
       draft: asDraft,
-      coverImageUrl: coverUrl,
+      coverImageUrl: statsCardUrl,
     });
     links.hashnodeUrl = hashnodeResult.postUrl;
     console.log(`Publish: ${asDraft ? 'Created Hashnode draft' : 'Published Hashnode post'}:`, links.hashnodeUrl);
@@ -231,10 +228,11 @@ export async function publishBlog(opts: {
 
   if (notionPageId) {
     const { writeNotionMarkdown, updateNotionPage } = await import('../tools/notion-rest.tool.js');
-    const plannerMd = buildPlannerMarkdown(weeklyData, blog, links, publishMode, { coverUrl, statsCardUrl });
+    const plannerMd = buildPlannerMarkdown(weeklyData, blog, links, publishMode);
     await writeNotionMarkdown(notionPageId, plannerMd);
     console.log('Publish: Planner markdown written to Notion');
-    await updateNotionPage(notionPageId, asDraft ? '📝' : '📊');
+    // The stats card becomes the Notion page cover (set only for a public https URL).
+    await updateNotionPage(notionPageId, asDraft ? '📝' : '📊', statsCardUrl);
   }
 
   const topLanguages = Object.entries(weeklyData.languages)

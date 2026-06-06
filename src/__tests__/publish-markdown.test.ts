@@ -54,10 +54,9 @@ describe('buildPlannerMarkdown', () => {
     expect(md).toContain('Draft');
   });
 
-  it('embeds image URLs in the planner when provided', () => {
-    const md = buildPlannerMarkdown(data, blog, {}, 'auto', { coverUrl: 'https://x/cover.png', statsCardUrl: 'https://x/stats.png' });
-    expect(md).toContain('![cover](https://x/cover.png)');
-    expect(md).toContain('![week stats](https://x/stats.png)');
+  it('does not embed images in the planner body (the stats card is the Notion page cover)', () => {
+    const md = buildPlannerMarkdown(data, blog, {}, 'auto');
+    expect(md).not.toContain('![');
   });
 });
 

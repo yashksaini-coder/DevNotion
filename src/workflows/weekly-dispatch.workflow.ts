@@ -91,14 +91,14 @@ const narrateStep = createStep({
 const PreparedSchema = z.object({
   blog: NarratorOutputSchema.shape.blog,
   weeklyData: WeeklyDataSchema,
-  images: z.object({ coverPath: z.string().optional(), statsCardPath: z.string().optional() }),
+  images: z.object({ statsCardPath: z.string().optional() }),
   devLogNumber: z.number(),
 });
 
 /**
  * Assign the sequential "Dev log #n" number from the shared run store, prefix
- * the headline, and generate the cover + stats-card images — exactly what the
- * dashboard path does, so automated runs match interactive ones.
+ * the headline, and generate the stats-card image (used as the cover) — exactly
+ * what the dashboard path does, so automated runs match interactive ones.
  */
 const prepareStep = createStep({
   id: 'prepare-publish',

@@ -79,10 +79,9 @@ previewRouter.get('/:jobId', (req, res) => {
         <span><strong>Tone:</strong> ${escapeHtml(run.tone)}</span>
         <span><strong>Tags:</strong> ${escapeHtml(run.result.tags.join(', '))}</span>
       </div>
-      ${run.images?.coverPath || run.images?.statsCardPath ? `
+      ${run.images?.statsCardPath ? `
       <div class="img-row">
-        ${run.images?.coverPath ? `<img src="/generated/${escapeHtml(run.images.coverPath.replace(/^.*assets[\\/]generated[\\/]/, '').replace(/\\\\/g, '/'))}" alt="cover">` : ''}
-        ${run.images?.statsCardPath ? `<img src="/generated/${escapeHtml(run.images.statsCardPath.replace(/^.*assets[\\/]generated[\\/]/, '').replace(/\\\\/g, '/'))}" alt="stats">` : ''}
+        <img src="/generated/${escapeHtml(run.images.statsCardPath.replace(/^.*assets[\\/]generated[\\/]/, '').replace(/\\\\/g, '/'))}" alt="cover">
       </div>` : ''}
       <form method="POST" action="/publish/${run.jobId}" style="margin-top:1.25rem">
         <label style="display:block;font-size:0.8rem;color:#a1a1aa;margin-bottom:0.4rem">Edit the post before publishing (markdown)</label>
