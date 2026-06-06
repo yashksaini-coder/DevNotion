@@ -92,7 +92,7 @@ BLOG_TONE=casual                     # casual | professional | technical | story
 # FOCUS_AREAS=TypeScript performance,open source
 # GENERATE_IMAGES=true               # cover + stats card
 # IMAGE_PUBLIC_BASE_URL=             # public base URL so images attach on publish
-# DASHBOARD_TOKEN=                   # optional bearer token to protect the dashboard
+# DASHBOARD_PASSWORD=                 # optional — protect the dashboard (scrypt-hashed; 10-min session)
 ```
 
 > **Note on images:** the cover/social image is a deterministic stats card rendered locally (resvg) — no API or quota needed. Set `IMAGE_PUBLIC_BASE_URL` to a public base (e.g. the raw repo URL) so the card resolves to a public URL and attaches as the cover on DEV.to/Hashnode/Notion; without it the card is still generated locally but not attached.

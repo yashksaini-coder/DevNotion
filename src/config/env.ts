@@ -80,7 +80,11 @@ const EnvSchema = z.object({
 
   // Dashboard (optional)
   DASHBOARD_PORT: z.coerce.number().int().min(1024).max(65535).default(3000),
-  DASHBOARD_TOKEN: z.string().optional(), // optional bearer token auth for dashboard
+  // Dashboard auth (optional — unset means the dashboard is public). Set a password
+  // to protect /runs, /run, /preview. Plaintext is hashed (scrypt) at boot; or supply
+  // a pre-computed `salt:hash` via DASHBOARD_PASSWORD_HASH so plaintext never hits disk.
+  DASHBOARD_PASSWORD: z.string().optional(),
+  DASHBOARD_PASSWORD_HASH: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

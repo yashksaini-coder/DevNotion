@@ -1,13 +1,13 @@
 import { Router, type IRouter } from 'express';
 import { listRuns, deleteRun, deleteRuns } from '../store.js';
-import { env } from '../../config/env.js';
+import { isAuthEnabled } from '../auth.js';
 import { page } from '../views/layout.js';
 
 export const dashboardRouter: IRouter = Router();
 
 dashboardRouter.get('/', (_req, res) => {
   const runs = listRuns(30);
-  const authEnabled = Boolean(env.DASHBOARD_TOKEN);
+  const authEnabled = isAuthEnabled();
 
   const rows = runs
     .map((run) => {
@@ -46,7 +46,9 @@ dashboardRouter.get('/', (_req, res) => {
     .join('');
 
   const body = `
-    ${!authEnabled ? '<div class="notice">🔓 Running without auth — set DASHBOARD_TOKEN to secure this dashboard</div>' : ''}
+    ${!authEnabled
+      ? '<div class="notice">🔓 Running without auth — set DASHBOARD_PASSWORD to secure this dashboard</div>'
+      : '<div class="notice" style="display:flex;justify-content:space-between;align-items:center">🔒 Authenticated (session expires after 10 min) <a href="/logout" style="color:#ff8787">Log out</a></div>'}
     <div class="card">
       <h2>Run History</h2>
       ${runs.length === 0 ? '<div class="empty">No runs yet — <a href="/run">start your first run</a></div>' : `

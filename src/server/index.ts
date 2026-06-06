@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { env } from '../config/env.js';
 import { STYLES } from './views/layout.js';
 import { authMiddleware } from './middleware/auth.js';
+import { isAuthEnabled, verifyPassword, createSession, destroySession, readCookie, SESSION_COOKIE, SESSION_TTL_MS } from './auth.js';
 import { landingRouter } from './routes/landing.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { runRouter } from './routes/run.js';
@@ -20,14 +21,17 @@ app.use('/generated', express.static(join(process.cwd(), 'assets', 'generated'))
 // Public landing page (no auth)
 app.use('/', landingRouter);
 
-// Optional auth (login page — only if DASHBOARD_TOKEN is set)
+// Login / logout — reachable without auth; active only when a password is configured.
 app.get('/login', (req, res) => {
-  if (!env.DASHBOARD_TOKEN) {
+  if (!isAuthEnabled()) {
     res.redirect('/runs');
     return;
   }
-  const redirectRaw = (req.query.redirect as string) ?? '/';
-  const redirect = redirectRaw.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const redirect = esc((req.query.redirect as string) ?? '/runs');
+  const error = req.query.error
+    ? '<div class="notice" style="border-color:#ff4d2e;color:#ff8787;margin-bottom:1rem">Wrong password — try again.</div>'
+    : '';
   res.send(/* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,13 +44,14 @@ app.get('/login', (req, res) => {
   <div style="display:flex;align-items:center;justify-content:center;min-height:80vh">
     <div class="card" style="width:320px">
       <h1 style="font-size:1.25rem;font-weight:700;margin-bottom:1.5rem;text-align:center">📊 DevNotion</h1>
+      ${error}
       <form method="POST" action="/login">
         <input type="hidden" name="redirect" value="${redirect}">
         <div class="field">
-          <label>Access Token</label>
-          <input type="password" name="token" placeholder="Enter dashboard token" required autofocus>
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Enter dashboard password" required autofocus>
         </div>
-        <button class="btn btn-primary" style="width:100%" type="submit">Login</button>
+        <button class="btn btn-primary" style="width:100%" type="submit">Log in</button>
       </form>
     </div>
   </div>
@@ -55,16 +60,23 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  const { token, redirect } = req.body as { token?: string; redirect?: string };
-  const target = redirect ?? '/runs';
-  if (token === env.DASHBOARD_TOKEN) {
-    // Redirect with token as query param (simple stateless auth for single-user dashboard)
-    const url = new URL(target, `http://localhost:${env.DASHBOARD_PORT}`);
-    url.searchParams.set('token', token!);
-    res.redirect(url.pathname + url.search);
+  const { password, redirect } = req.body as { password?: string; redirect?: string };
+  // Only allow internal redirect targets — never an absolute/protocol-relative URL.
+  const target =
+    typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/runs';
+  if (password && verifyPassword(password)) {
+    const sessionId = createSession();
+    res.cookie(SESSION_COOKIE, sessionId, { httpOnly: true, sameSite: 'lax', maxAge: SESSION_TTL_MS, path: '/' });
+    res.redirect(target);
   } else {
     res.redirect(`/login?redirect=${encodeURIComponent(target)}&error=1`);
   }
+});
+
+app.get('/logout', (req, res) => {
+  destroySession(readCookie(req.headers.cookie, SESSION_COOKIE));
+  res.clearCookie(SESSION_COOKIE);
+  res.redirect('/login');
 });
 
 // Apply auth to all routes below
@@ -87,8 +99,8 @@ export function startServer(): void {
   const port = env.DASHBOARD_PORT;
   app.listen(port, () => {
     console.log(`✓ DevNotion Dashboard running at http://localhost:${port}`);
-    if (!env.DASHBOARD_TOKEN) {
-      console.warn('⚠ No DASHBOARD_TOKEN set — dashboard is publicly accessible on this port');
+    if (!isAuthEnabled()) {
+      console.warn('⚠ No DASHBOARD_PASSWORD set — dashboard is publicly accessible on this port');
     }
   });
 }
