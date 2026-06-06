@@ -87,6 +87,42 @@ const narrateStep = createStep({
   },
 });
 
+// Enriched handoff: prefixed blog + images + the assigned dev-log number.
+const PreparedSchema = z.object({
+  blog: NarratorOutputSchema.shape.blog,
+  weeklyData: WeeklyDataSchema,
+  images: z.object({ coverPath: z.string().optional(), statsCardPath: z.string().optional() }),
+  devLogNumber: z.number(),
+});
+
+/**
+ * Assign the sequential "Dev log #n" number from the shared run store, prefix
+ * the headline, and generate the cover + stats-card images — exactly what the
+ * dashboard path does, so automated runs match interactive ones.
+ */
+const prepareStep = createStep({
+  id: 'prepare-publish',
+  inputSchema: NarrateOutputSchema,
+  outputSchema: PreparedSchema,
+  execute: async ({ inputData }) => {
+    const { env } = await import('../config/env.js');
+    const { nextDevLogNumber } = await import('../server/store.js');
+    const { formatDevLogTitle } = await import('../publish/title.js');
+    const { generateImages } = await import('../images/generate-images.js');
+
+    const devLogNumber = nextDevLogNumber();
+    const blog = { ...inputData.blog, headline: formatDevLogTitle(devLogNumber, inputData.blog.headline) };
+    console.log(`Prepare step: dev-log #${devLogNumber} — "${blog.headline}"`);
+
+    // Best-effort (never throws); skipped when GENERATE_IMAGES=false.
+    const images = env.GENERATE_IMAGES
+      ? await generateImages(inputData.weeklyData.weekStart, inputData.weeklyData, blog)
+      : {};
+
+    return { blog, weeklyData: inputData.weeklyData, images, devLogNumber };
+  },
+});
+
 const PublishOutputSchema = z.object({
   notionPageUrl: z.string().optional(),
   devtoUrl: z.string().optional(),
@@ -106,16 +142,49 @@ const PublishOutputSchema = z.object({
 
 const publishStep = createStep({
   id: 'publish',
-  inputSchema: NarrateOutputSchema,
+  inputSchema: PreparedSchema,
   outputSchema: PublishOutputSchema,
   execute: async ({ inputData }) => {
     const { env } = await import('../config/env.js');
     const { publishBlog } = await import('../publish/publish-content.js');
-    return publishBlog({
+    const { createRun, updateRun } = await import('../server/store.js');
+
+    const result = await publishBlog({
       blog: inputData.blog,
       weeklyData: inputData.weeklyData,
       publishMode: env.PUBLISH_MODE,
+      images: inputData.images,
     });
+
+    // Persist into the shared run store AFTER a successful publish: keeps the
+    // dev-log counter globally sequential across CLI + dashboard, surfaces the
+    // automated run in dashboard history, and avoids burning a number on a
+    // fail-loud abort (which throws before reaching here).
+    const { weeklyData, blog, images, devLogNumber } = inputData;
+    const record = createRun(weeklyData.weekStart, env.BLOG_TONE, env.FOCUS_AREAS ?? '');
+    updateRun(record.jobId, {
+      status: 'published',
+      completedAt: new Date().toISOString(),
+      weeklyData,
+      images,
+      devLogNumber,
+      result: {
+        headline: result.headline,
+        tldr: blog.tldr,
+        content: blog.content,
+        tags: blog.tags,
+        notionPageUrl: result.notionPageUrl,
+        devtoUrl: result.devtoUrl,
+        hashnodeUrl: result.hashnodeUrl,
+        totalCommits: weeklyData.totalCommits,
+        totalPRs: weeklyData.totalPRs,
+        totalIssues: weeklyData.totalIssues,
+        totalReviews: weeklyData.totalReviews,
+        repoCount: weeklyData.repos.length,
+      },
+    });
+
+    return result;
   },
 });
 
@@ -126,5 +195,6 @@ export const weeklyDispatchWorkflow = createWorkflow({
 })
   .then(harvestStep)
   .then(narrateStep)
+  .then(prepareStep)
   .then(publishStep)
   .commit();
