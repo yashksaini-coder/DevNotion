@@ -7,7 +7,7 @@ cover_image:
 
 *This is a submission for the [GitHub Finish-Up-A-Thon Challenge](https://dev.to/challenges/github-2026-05-21)*
 
-> **[Editor's note — delete before publishing]** Add a `cover_image:` URL, drop your real screenshots into the `[Screenshot: …]` slots, and in *"My Experience with GitHub Copilot"* keep only what matches your actual usage (add your own Copilot screenshots). Everything else is finished prose.
+> **[Editor's note — delete before publishing]** Search for **`REPLACE_WITH_IMAGE_URL`** and swap each one for a real image URL (drag a file into the DEV.to editor to host it, then paste the URL). Set a `cover_image:` too — the weekly stats card works well as the cover. In *"My Experience with GitHub Copilot"* keep only what matches your actual usage. Everything else is finished prose.
 
 ## What I Built
 
@@ -25,11 +25,15 @@ The one idea behind the whole rebuild: *a tool that writes in your voice and pub
 
 **Repo:** [github.com/yashksaini-coder/DevNotion](https://github.com/yashksaini-coder/DevNotion)
 
-`[Screenshot: dashboard run history — cohesive dark UI, status badges (Preview Ready / Published), "Review & Publish" actions]`
+![Dashboard run history — dark UI, status badges (Preview Ready / Published), Review & Publish actions](REPLACE_WITH_IMAGE_URL)
 
-`[Screenshot: the preview/edit screen — the generated post in an editable markdown box, an "Approve & Publish" button, and a stats grid]`
+![Preview & edit screen — the generated post in an editable markdown box, an Approve & Publish button, and a stats grid](REPLACE_WITH_IMAGE_URL)
 
-`[Screenshot: the auto-generated weekly stats card — post title + 13 commits · +2,252 / −293 · 3 repos]`
+![Weekly stats card used as the cover — post title + 13 commits · +2,252 / −293 · 3 repos](REPLACE_WITH_IMAGE_URL)
+
+![Public landing page — Swiss hero with social links](REPLACE_WITH_IMAGE_URL)
+
+![Architecture — three agents, generation split from publishing by a human approval gate](REPLACE_WITH_IMAGE_URL)
 
 Three specialist agents, with generation and publishing deliberately split by a human approval gate:
 
@@ -209,7 +213,7 @@ Reviving a codebase you haven't opened in months is mostly *re-orientation*, and
 - **Knowing when to delete.** I started wiring an AI cover via the Nano Banana API and paired to figure out its quirks — Gemini image models return bytes via `result.files`, and you call `generateText`, not a dedicated image function. The genuinely useful assist came right after: confirming the free tier's image quota was `limit: 0`, which made the call to drop the whole thing and let the deterministic stats card be the cover obvious instead of stubborn.
 - **Tests.** Generating the first pass of each unit test from the module's signature, then tightening the assertions by hand, is what made a 38-test suite cheap enough to actually write.
 
-`[Screenshot: a real GitHub Copilot interaction from your workflow — e.g. Copilot Chat generating the provider interface, or inline completion filling a provider class]`
+![GitHub Copilot in the workflow — e.g. Copilot Chat generating the provider interface, or inline completion filling a provider class](REPLACE_WITH_IMAGE_URL)
 
 What changed most wasn't raw speed — it was *confidence flowing back into a cold codebase*. The AI didn't just complete lines; it helped me remember what the code did and decide where to take it next. That's the part of "finishing" nobody warns you about, and it's the part pairing helped most.
 

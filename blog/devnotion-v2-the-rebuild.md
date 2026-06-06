@@ -5,6 +5,8 @@ tags: ai, typescript, opensource, webdev
 cover_image:
 ---
 
+<!-- [Editor's note — delete before publishing] Search for REPLACE_WITH_IMAGE_URL and swap each for a real image URL (drag a file into the editor to host it). Set a cover_image: too — the weekly stats card works well. -->
+
 Two months ago, the first thing my own tool did when I reopened it was publish a broken post to my real DEV.to account.
 
 DevNotion is a small pipeline I built back in March: it reads a week of my GitHub activity, writes a first-person blog post about it, and publishes that to Notion and DEV.to. It won $500 in the Notion MCP Challenge, and then I stopped touching it — which is the natural lifecycle of most hackathon projects. When I came back to it for the GitHub Finish-Up-A-Thon, the very first run failed in a way that taught me exactly what "finishing" this thing actually meant.
@@ -78,6 +80,8 @@ That single cut paid for three things at once: a safe failure mode, an editable 
 
 A few of the changes are worth showing in detail.
 
+![DevNotion dashboard — generate, preview, edit, then approve before anything publishes](REPLACE_WITH_IMAGE_URL)
+
 **Fail-loud narration.** The narrate step no longer catches its own errors. If the model is unavailable or returns something unparseable, it throws, the run is marked failed, and publishing never happens:
 
 ```typescript
@@ -113,6 +117,8 @@ const stats = [
 A model would happily round 2,252 to "about 2,000," and a cover with wrong stats is worse than none. The card leads with the post title and the week's metrics, and ships as the cover on every target — DEV.to, Hashnode, Notion. (The `Dev log #n` number lives on the article title, not the card, so the banner is all title and numbers and long titles wrap instead of clipping.) Deleting the AI cover made the feature *more* reliable, not less: it went from never working to always working, with no API call in the path.
 
 > **Note:** The cover is deterministic. There's no quota to exhaust, no fallback to reason about, and nothing about the cover can block a publish — it just renders.
+
+![Weekly stats card used as the cover — post title + the week's metrics](REPLACE_WITH_IMAGE_URL)
 
 **Multi-provider, one knob.** v1 was Gemini-only. v2 reads `LLM_PROVIDER` and routes to Gemini, OpenAI, or Anthropic through one small abstraction, so a model outage or a quota wall isn't fatal to the whole idea.
 
