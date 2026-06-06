@@ -7,19 +7,19 @@ cover_image: https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/h
 
 *This is a submission for the [GitHub Finish-Up-A-Thon Challenge](https://dev.to/challenges/github-2026-05-21)*
 
-> **[Editor's note — delete before publishing]** The `cover_image:` and the Demo stats-card slot are pre-filled with a real generated card (week of 2026-01-19). For the remaining screenshots, search for **`REPLACE_WITH_IMAGE_URL`** and swap each one for a real image URL (drag a file into the DEV.to editor to host it, then paste the URL). In *"My Experience with GitHub Copilot"* keep only what matches your actual usage. The `{% github %}` lines are DEV.to **liquid embeds** — they render as rich repo cards on the platform, so ignore how they look in plain markdown. Everything else is finished prose.
+> **[Editor's note — delete before publishing]** The cover, the stats-card shot, the architecture diagram, the landing page, and the Copilot screenshot are already filled in. Two slots still say `REPLACE_WITH_IMAGE_URL` — the dashboard history and the preview/edit screen. Grab those from your running dashboard, drop them into the DEV.to editor, and paste the URLs. Trim *"My Experience with GitHub Copilot"* to what you actually did. The `{% github %}` lines are DEV.to embeds — they turn into repo cards on the platform, so ignore how they look here.
 
 ## What I Built
 
-Every Monday standup, someone asks the same question: *"What did you work on last week?"* And for years my honest answer was a shrug and a scroll through commit history I could barely parse. Multiply that by every standup, every quarterly review, every *"so what have you been building?"* from a friend — the cost of not having a readable record of your own work compounds quietly.
+Every Monday standup, someone asks: *"What'd you ship last week?"* And every Monday I freeze. Did I merge that PR Tuesday or Wednesday? Was the gnarly part in the harvest code or the publisher? I'd sit there scrolling my own commit history like it belonged to a stranger.
 
-So in March I built **[DevNotion](https://github.com/yashksaini-coder/DevNotion)** — a [Mastra](https://mastra.ai) pipeline of specialist agents that harvests a week of my GitHub activity, narrates it into a first-person blog post, and publishes it to Notion and DEV.to. It won **$500** in the Notion MCP Challenge. And then, like a lot of hackathon projects, it sat.
+So back in March I built something to answer the question for me. **[DevNotion](https://github.com/yashksaini-coder/DevNotion)** — a [Mastra](https://mastra.ai) pipeline that reads a week of my GitHub activity, writes it up as a first-person blog post, and ships it to Notion and DEV.to. It won **$500** in the Notion MCP Challenge. Then I did what everyone does with a hackathon project: nothing, for two months.
 
-It *worked*. But every week I used it, I felt the gaps. It was locked to a single LLM. It published whatever it generated the instant it generated it — no preview, no edit, no undo. And when I reopened the repo for the Finish-Up-A-Thon, the **very first run failed in the most embarrassing way I can imagine** — which turned out to be the perfect place to begin.
+Here's the thing, though. It worked, but I never fully trusted it. One LLM, no say in it. It published the instant it finished writing — no preview, no edit, no "hang on, let me read that first." And when I opened the repo back up for the Finish-Up-A-Thon, the very first run failed in the most embarrassing way I can think of. Honestly? Best thing that could've happened. It showed me exactly what "finish this" was supposed to mean.
 
-**DevNotion v2** is the version I should have shipped the first time: a pipeline that **generates a draft, shows it to you, lets you edit it, and only publishes when you approve** — backed by multiple LLM providers, three publishing targets, a deterministic stats-card cover, far richer data, and a real test suite. Seven focused phases took it from *runs* to *finished*: 51 tests, three interchangeable model providers, a one-command setup wizard, and — most importantly — a failure mode that protects my reputation instead of risking it.
+**DevNotion v2** is the version I should've shipped the first time. It writes a draft, shows it to me, lets me edit it, and *only* publishes when I say go. Multiple LLM providers. Three publishing targets. A deterministic cover image, much better data, a real test suite. Seven phases, 51 tests, a one-command setup wizard — and, most of all, a failure mode that protects my name instead of betting it.
 
-The one idea behind the whole rebuild: *a tool that writes in your voice and publishes under your name has to be trustworthy before it's convenient.*
+One idea ran under the whole rebuild: a tool that writes in your voice and posts under your name has to be trustworthy before it gets to be convenient.
 
 ## Demo
 
@@ -33,9 +33,9 @@ The one idea behind the whole rebuild: *a tool that writes in your voice and pub
 
 ![Weekly stats card used as the cover — "Bridging the Gap…" + 35 commits · +11,222 / −2,713 · 5 repos](https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/heads/feature/devnotion-v2-revival/assets/generated/2026-01-19/stats.png)
 
-![Public landing page — Swiss hero with social links](REPLACE_WITH_IMAGE_URL)
+![Public landing page — Swiss hero with social links](https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/heads/feature/devnotion-v2-revival/assets/Landing.png)
 
-![Architecture — three agents, generation split from publishing by a human approval gate](REPLACE_WITH_IMAGE_URL)
+![Architecture — three agents, generation split from publishing by a human approval gate](https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/heads/feature/devnotion-v2-revival/assets/Architecture.png)
 
 Three specialist agents, with generation and publishing deliberately split by a human approval gate:
 
@@ -49,17 +49,17 @@ flowchart TD
     G -->|approve| PUB["3 · Publisher Agent<br/>Notion · DEV.to · Hashnode + author footer"]
 ```
 
-Each agent has a narrow, testable remit. **Harvest** is pure data — two bounded GraphQL/REST passes over a week of activity, zero LLM. **Narrate** is the only model call: it turns that data into a first-person post in your chosen tone. **Publish** is deterministic plumbing — Notion page, DEV.to draft, optional Hashnode draft, the stats-card cover, and the author footer. Between narrate and publish sits the human gate, which is the entire reason v2 exists.
+Each agent does one thing and only one thing. **Harvest** is pure data — two quick GraphQL/REST passes over the week, no LLM anywhere near it. **Narrate** is the single model call: raw data goes in, a first-person post comes out, in whatever tone you picked. **Publish** is plumbing — a Notion page, a DEV.to draft, a Hashnode draft if you've set it up, plus the cover and the footer. And right in the middle, between writing and shipping, there's a human. That gate is the whole reason v2 exists.
 
-The design rule that's held since v1: **only use an LLM where it earns its keep.** Harvesting GitHub data, rendering the stats card, and pushing to each platform are all deterministic code — no token cost, no rate limits, and crucially *no hallucination surface*. The model gets exactly one job, narration, where judgment and voice actually matter; every number, link, and timestamp around it comes from code that can be unit-tested. That boundary is the reason the output is safe to publish under my name without re-reading every figure.
+The rule I kept from v1: an LLM only shows up where it earns its spot. Harvesting the data, drawing the stats card, pushing to each platform — that's all plain deterministic code. No tokens, no rate limits, no chance of the thing inventing a number. The model writes the prose. Everything around it is code I can unit-test. That's the only reason I'm comfortable letting it post under my name without re-reading every figure first.
 
-In practice the loop is quick. I trigger a run — on a schedule, or by hand from the dashboard — and the harvest and narrator produce a draft in a few seconds. It lands marked **Preview Ready**, never published. I skim it, fix a phrase or two in the in-browser editor, and hit **Approve & Publish**. Only then does anything leave my machine — and what leaves is a *draft* on each platform, not a live post.
+In practice it's quick. I kick off a run (scheduled, or by hand from the dashboard) and a few seconds later there's a draft sitting there marked **Preview Ready**. Not published. I read it, fix a sentence or two right in the browser, hit **Approve & Publish**. *Then* it goes out — and even then it goes out as a draft on each platform, not a live post.
 
 ## The Comeback Story
 
 ### Where v1 actually was
 
-I like to think I left v1 in good shape. The first run of the revival corrected me immediately:
+I genuinely thought I'd left v1 in decent shape. The first run set me straight in about four seconds:
 
 ```text
 Narrate step: LLM call failed: You exceeded your current quota …
@@ -68,23 +68,23 @@ Publish: Created Notion page: https://app.notion.com/…
 Publish: Published DEV.to article: https://dev.to/…
 ```
 
-Read it twice. Narration **failed** — and the pipeline **published anyway**. v1's well-intentioned "always produce a blog" fallback meant a quota error quietly shipped a bare stats stub to my real DEV.to account. For a tool whose entire job is to represent my work, that's the worst possible behavior.
+Read it twice. The narration **failed** — and the thing **published anyway**. v1 had this well-meaning "always produce a blog" fallback, so a quota error quietly shipped a bare stats stub to my real DEV.to account. For a tool whose entire job is to represent my work? That's about the worst thing it could possibly do.
 
-That single log hid three distinct bugs:
+That one log was hiding three separate bugs:
 
-1. **The wrong model was wired in.** The live workflow read a different config key than the one I'd been carefully setting, so it silently fell back to a *retired* `gemini-2.0-flash` whose free quota is now `0`. I was configuring a knob connected to nothing.
-2. **Failure was silent.** A `try/catch` swapped in a deterministic stub and marched straight on to publishing.
-3. **There was no gate.** Nothing in the entire system ever let me *look* before it went live.
+1. **Wrong model, wired to nothing.** The live workflow read a different config key than the one I'd been carefully setting. So it quietly fell back to a *retired* `gemini-2.0-flash`, whose free quota is now `0`. I'd been turning a knob connected to thin air.
+2. **The failure was silent.** A `try/catch` swapped in a deterministic stub and marched straight on to publishing.
+3. **Nothing ever let me look.** No preview, no gate, no pause before it went live.
 
-And a quieter, more insidious one: a week of 13 direct commits reported **`+0/-0` lines changed**, because line stats were summed from pull requests only. The posts were technically accurate and completely lifeless.
+And a sneakier one underneath all that: a week with 13 direct commits reported **`+0/-0` lines changed**, because line stats were summed from pull requests only. The posts came out technically accurate and completely dead.
 
-What unsettled me most wasn't any single bug — it was that the *most damaging* one was the helpful one. The `try/catch` that fell back to a deterministic stub was added in v1 to guarantee a post always shipped. That kindness is precisely what turned a recoverable quota error into a published embarrassment. "Always succeed" is the wrong goal for a tool that speaks for you; "never lie" is the right one.
+What actually bothered me wasn't any single bug. It was that the *worst* one was the helpful one. That `try/catch`-into-a-stub got added in v1 on purpose, to guarantee a post always shipped. And that good intention is exactly what turned a recoverable quota error into a published embarrassment. Turns out "always succeed" is the wrong goal for something that talks for you. "Never lie" is the right one.
 
-I rebuilt DevNotion in seven focused phases. Each one got a short spec, a written plan, an implementation, a code review, and a green test run before the next began — small, verifiable steps instead of one heroic rewrite. That discipline wasn't ceremony — it's the fail-loud principle applied to my own process: each phase had to *prove* itself (types clean, tests green) before the next was built on top, so a regression couldn't hide three phases deep. The order it took:
+So I rebuilt it in seven phases. Each one got a quick spec, a plan, the actual work, a review, and a green test run before I let myself start the next. Not ceremony — it's the fail-loud rule pointed at my own process. Every phase had to prove itself (types clean, tests green) before anything got stacked on top, so nothing could quietly rot three phases deep. Here's how it went.
 
 ### Phase 1 — Make narration trustworthy
 
-First, one source of truth for model selection, defaulting to `gemini-3-flash-preview` (which actually *has* a free tier). Then the change that matters most — **fail-loud narration**:
+First, one place to choose the model, defaulting to `gemini-3-flash-preview` (which, unlike the thing it replaced, actually has a free tier). Then the part that matters most — narration that **fails loud**:
 
 ```typescript
 // src/llm/narrate.ts
@@ -105,9 +105,9 @@ export async function narrateBlog(provider, data, opts = {}) {
 }
 ```
 
-If narration throws, the workflow step throws, the run is marked **failed**, and the publish step never runs. A quota error can no longer reach a single reader. (The old deterministic builder still exists — but it's now an explicit, manual escape hatch, never an automatic one.)
+If narration throws, the step throws, the run is marked **failed**, and the publish step never runs. A quota error can't reach a single reader anymore. (The old deterministic builder is still in there — but now it's a manual escape hatch you reach for on purpose, never something that fires on its own.)
 
-Trustworthy also meant not being hostage to one vendor's quota. v1 was Gemini-only; v2 routes every call through a tiny provider interface, so an outage or a quota wall on one model is a config change, not a rewrite:
+Trustworthy also meant not living and dying by one vendor's quota. v1 was Gemini or nothing. v2 runs every call through a tiny provider interface, so an outage or a quota wall is a config change instead of a rewrite:
 
 ```typescript
 // src/llm/provider.ts — one interface, three interchangeable backends
@@ -120,13 +120,13 @@ export function createProvider(env: Env): LLMProvider {
 }
 ```
 
-The Gemini backend also round-robins across a comma-separated list of keys (`keys[keyIndex++ % keys.length]`) — three free keys spread the load to roughly 1,500 requests/day combined, comfortably above a weekly run plus a day of hacking. Swapping the entire brain of the pipeline is now a single environment variable.
+The Gemini side also rotates through a comma-separated list of keys (`keys[keyIndex++ % keys.length]`). Three free keys gets you somewhere around 1,500 requests a day between them, which is plenty for a weekly run plus a day of messing around. Swapping the whole brain of the pipeline is one env var now.
 
 ### Phase 2 — Split generate from publish
 
-This was the keystone, and it explains *why* v1 never had a preview. The old workflow welded harvest → narrate → publish into one chain whose output schema **dropped the blog body entirely**. There was nothing to preview because the content never survived the step boundary. The smoking gun was the workflow's own output type — it carried URLs and counts but no `content` field, so the draft died inside the step that created it. You can't bolt a preview screen onto an architecture that throws the content away; the split wasn't a feature layered on v1, it was the precondition for every other improvement.
+This was the keystone, and it's the reason v1 never had a preview to begin with. The old workflow welded harvest → narrate → publish into one chain, and that chain's output schema **dropped the blog body on the floor**. There was nothing to preview because the content never survived the handoff between steps. The smoking gun was the workflow's own output type: it carried URLs and counts and no `content` field at all. You can't bolt a preview screen onto something that throws the draft away. So splitting it wasn't a nice-to-have stacked on v1. It was the thing that had to happen before anything else could.
 
-v2 splits the pipeline in two. A `generate` phase produces a full, previewable draft and **stops**. A separate `publish` action runs only on approval, applying any edits you made:
+v2 cuts the pipeline in half. A `generate` phase makes a full, previewable draft and **stops**. A separate `publish` step runs only when you approve, edits and all:
 
 ```typescript
 // src/server/routes/run.ts
@@ -134,7 +134,7 @@ v2 splits the pipeline in two. A `generate` phase produces a full, previewable d
 // POST /publish/:jobId → applies your edited markdown, then calls publishBlog().
 ```
 
-That one architectural cut delivered three wins simultaneously: a safe failure mode, an editable in-browser preview, and run history that finally shows what was actually written. The publisher itself became a reusable function shared by both the dashboard and the cron path:
+That one cut bought three things at once: a safe failure mode, an editable preview in the browser, and run history that finally shows what actually got written. And the publisher turned into a single function that both the dashboard and the cron job call:
 
 ```typescript
 // src/publish/publish-content.ts — one publisher, used by cron AND the dashboard
@@ -144,11 +144,11 @@ export async function publishBlog(opts: {
 }): Promise<PublishResult> { /* notion → devto → hashnode → write planner + footer */ }
 ```
 
-Holding it together is a small JSON-backed **run store** that doubles as the pipeline's state machine. Every run moves through an explicit lifecycle — `running → preview → publishing → published`, or `failed` — and that one record is what the dashboard lists, what the preview screen renders from, and what the publish step reads back when you approve. It's also where the `Dev log #n` counter lives, so the numbering stays sequential whether a post originates from the dashboard or the headless cron job: one ledger, two entry points.
+Tying it together is a little JSON-backed **run store** that's basically the pipeline's state machine. Every run walks a fixed path — `running → preview → publishing → published`, or `failed` — and that one record is what the dashboard lists, what the preview renders from, and what publish reads back when you hit approve. It's also where the `Dev log #n` counter lives, so the numbers stay in order whether a post came from the dashboard or the cron job. One ledger, two doors in.
 
 ### Phase 3 — Harvest the real diff
 
-The `+0/-0` bug is gone. A bounded second GraphQL pass pulls each active repo's commit history — real additions/deletions, changed-file counts, and the **top directories you touched** — so the narrator can ground the story in specifics instead of generic verbs. The exact week that used to report nothing now reports:
+The `+0/-0` bug is dead. A second, bounded GraphQL pass walks each active repo's commits — real additions and deletions, changed-file counts, and the **directories you actually touched** — so the narrator can talk about specifics instead of waving its hands. That same week that used to report nothing now says:
 
 ```text
 week 2026-05-27 → totals +2,252/-293
@@ -156,7 +156,7 @@ week 2026-05-27 → totals +2,252/-293
 - yashksaini-coder: +24/-3,      files=5,  areas=[assets, .github/workflows]
 ```
 
-It's quota-safe by construction — hard caps on how many repos and commits it inspects, with per-commit best-effort isolation so one failure never sinks the harvest:
+It's quota-safe on purpose: hard caps on how many repos and commits it'll look at, and every commit wrapped in its own `try/catch` so one bad fetch can't sink the whole week:
 
 ```typescript
 // src/tools/github-commits.ts — bounded, best-effort changed-file harvest
@@ -171,13 +171,11 @@ for (const sha of shas) {
 }
 ```
 
-The two-pass split is deliberate: GraphQL is efficient for breadth (a whole week across many repos in one query), while the per-commit file lists come from a handful of targeted REST calls — each cheap, each isolated, none able to take down the rest.
-
-This was the single feedback theme from v1's readers: *commit titles are cryptic; the diff tells the story.* Now it does.
+Two passes, on purpose. GraphQL is great for breadth — a whole week across a pile of repos in one query. The per-commit file lists come from a few targeted REST calls instead, each one cheap and each one isolated. This was the single thing v1's readers kept telling me: commit titles are cryptic, the diff is where the story actually is. Now it's in there.
 
 ### Phase 4 — Sharper writing + an author footer
 
-I tightened the narrator's instructions — character-led hooks instead of stat lines, an explicit *no stat-dumping* rule (the numbers live on the card; the prose shouldn't recite them), and guidance to lean on the new touched-areas data so a post can say "a week deep in `src/server`" rather than "made several changes." The tone is a knob — `casual`, `professional`, `technical`, or `storytelling` — but those guardrails hold across all four. Then I added a consistent author/social footer to every post on every platform, rendered from one config file:
+I tightened the narrator's instructions. Lead with a character or a moment, not a stat line. A hard *no stat-dumping* rule — the numbers live on the card, the prose doesn't need to recite them. And lean on the new touched-areas data, so a post can say "a week deep in `src/server`" instead of "made several changes." You still get to pick the tone — `casual`, `professional`, `technical`, `storytelling` — but those rules hold no matter which one you choose. Then I gave every post, on every platform, the same author footer, built from one config file:
 
 ```text
 ---
@@ -186,15 +184,15 @@ I tightened the narrator's instructions — character-led hooks instead of stat 
 [GitHub] · [X] · [LinkedIn] · [Portfolio]
 ```
 
-It's applied at publish-build time, not by the narrator — so it can't be accidentally edited away in the preview, and Hashnode gets it for free.
+It gets stamped on at publish time, not written by the narrator. So you can't accidentally delete it in the preview, and Hashnode gets it for free.
 
-The payoff shows in the titles. A recent live run opened with *"Bridging the Gap: TLS Interop, p2p Hardening, and Neovim Refinement"* — grounded in the directories I'd actually touched that week, not "This week I made 35 commits." That specificity is exactly what the touched-areas data buys.
+You can see the difference in the titles. One real run opened with *"Bridging the Gap: TLS Interop, p2p Hardening, and Neovim Refinement"* — pulled straight out of the directories I'd been living in that week. Not "This week I made 35 commits." That's what the touched-areas data buys you.
 
 ### Phase 5 — The cover image
 
-My first instinct was the obvious one: an AI **cover** via Nano Banana (`gemini-2.5-flash-image`), prompted from the week's headline. I wired it up — and discovered the free tier gives image generation a quota of `limit: 0`. It never produced a single cover. That probabilistic, rate-limited dependency was buying me nothing.
+My first instinct was the obvious one: an AI cover. Nano Banana (`gemini-2.5-flash-image`), prompted off the week's headline. I wired the whole thing up… and found out the free tier gives image generation a quota of `limit: 0`. It never produced a single cover. So I was carrying a flaky, rate-limited dependency that did, in practice, nothing.
 
-So I deleted it, and let a piece of code I already had do the job. The **deterministic stats card** — rendered from a hand-built SVG → PNG (via `@resvg/resvg-js`) with the week's *exact* numbers — is already exactly cover/OG dimensions, 1200×630. I just made it the cover:
+So I ripped it out and used something I already had. The **stats card** — a hand-built SVG rendered to PNG with `@resvg/resvg-js`, showing the week's *exact* numbers — happens to already be 1200×630, which is cover/OG size. So I just made it the cover:
 
 ```typescript
 // src/images/stats-card.ts — the numbers come from code, never from a model
@@ -206,19 +204,19 @@ const stats = [
 ];
 ```
 
-The card leads with the post title and the week's headline metrics — commits, PRs, reviews, lines added/removed, repos — and ships as the cover/social image on every target: DEV.to's `main_image`, the Hashnode cover, the Notion page cover. (The `Dev log #n` number stays on the *article* title, not the cover, so the banner is all title and numbers, and a long title wraps cleanly instead of running off the edge.) **Code** for the factual card means an LLM can never hallucinate `2,252` into `2,000`, and the cover went from *never working* to *always working* in the same change that deleted code: no API, no quota, no fallback path — it just renders. That's the rare refactor where the simplification and the quality win are the same move.
+It leads with the post title and the headline numbers (commits, PRs, reviews, lines, repos) and becomes the cover everywhere: DEV.to's `main_image`, the Hashnode cover, the Notion page cover. The `Dev log #n` bit stays on the article title, not the card, so the banner is all title and stats, and a long title wraps instead of running off the edge. Because the card is built from code, no model can ever round `2,252` down to "about 2,000." And here's the bit I liked: ripping out the AI cover made the feature *more* reliable, not less. It went from never working to always working in the same commit that deleted code. No API, no quota, no fallback path. It just renders.
 
 ### Phase 6 — A dashboard worth screenshotting
 
-The three dashboard routes had drifted into three slightly-different stylesheets. I unified them into a single design system — one set of design tokens, one page shell, shared components — and gave it a deliberate **Swiss / International Typographic** look: a tight type scale, a single orange accent, lots of structural whitespace. The whole dashboard is server-rendered HTML with no build step — it runs straight through `tsx` — which keeps the surface small and the dependency list short. Most of the polish went into the preview/edit view, because that screen *is* the pitch: it's where you read the draft, fix a sentence, and decide to ship.
+My three dashboard routes had quietly drifted into three slightly-different stylesheets. I pulled them back into one design system — shared tokens, one shell, shared components — and gave it a deliberate **Swiss / International Typographic** feel: tight type scale, one orange accent, lots of breathing room. It's all server-rendered HTML, no build step, straight through `tsx`, which keeps the footprint tiny and the dependency list short. Most of the effort went into the preview/edit screen, because honestly that screen *is* the product. It's where you read the draft, tweak a line, and decide to ship.
 
 ### Phase 7 — Tests
 
-**51 tests across 18 suites** now cover the frontmatter parser, the fail-loud path, the deterministic fallback, tag normalization, provider/model selection, publish-target selection, the diff aggregation, and the stats-card builder (including the cover's title-strip and wrap). They're fast (sub-two-second runs) and deliberately boring — the point is that the deterministic spine has a regression net, so a refactor like swapping the cover implementation can't quietly break publishing.
+**51 tests across 18 suites** now cover the frontmatter parser, the fail-loud path, the deterministic fallback, tag normalization, provider and model selection, publish-target selection, the diff aggregation, and the stats-card builder (cover title-strip and wrap included). They run in under two seconds and they're deliberately boring. The point isn't cleverness — it's a regression net under the deterministic spine, so something like swapping out the cover implementation can't quietly break publishing.
 
 ### Setup in one command
 
-v1's onboarding was a `.env` scavenger hunt — copy the example, guess which keys you actually need, and find out what's missing only when a run crashes mid-flight. `npx devnotion init` replaces that with a guided wizard: it prompts for each credential, **validates it with a live API call** (a green check or a red error, right there in the terminal), and writes a correct `.env.local`. It's a small thing, but software that calls itself *finished* shouldn't make the first five minutes the hardest five.
+v1's setup was a `.env` scavenger hunt: copy the example, guess which keys you actually need, find out you missed one when a run blows up halfway through. `npx devnotion init` is a wizard instead. It asks for each credential, **checks it with a live API call** (green check or red error, right there in the terminal), and writes a clean `.env.local`. Small thing. But something that calls itself *finished* shouldn't make the first five minutes the worst five.
 
 ### Before vs after
 
@@ -238,36 +236,35 @@ v1's onboarding was a `.env` scavenger hunt — copy the example, guess which ke
 
 ## Publishing responsibly (the research that turned into a feature)
 
-Around phase five I nearly bolted on automatic publishing to more platforms. Then I did the boring, important thing first: I read the rules. The question I actually searched was simple — *"is automated/AI publishing even allowed here, and can it get my account restricted?"* — and the answers reshaped the design.
+Around phase five I almost bolted on auto-publishing to a couple more platforms. Then I did the boring thing first and actually read the rules. The question I typed into the search bar was blunt: *"is automated/AI publishing even allowed here, and can it get my account restricted?"* The answers ended up reshaping the design.
 
-- **Medium** is a dead end for automation, on two counts. Its [publishing API was archived in 2023](https://github.com/Medium/medium-api-docs) (no new integration tokens), and its [AI content policy](https://help.medium.com/hc/en-us/articles/22576852947223-Artificial-Intelligence-AI-content-policy) gives undisclosed AI writing "Network Only" distribution and can remove it outright. An auto-posted AI dev-log is precisely what that policy targets — so Medium is off the roadmap by design, not by omission.
-- **Hashnode** has a genuine [publishing API](https://apidocs.hashnode.com/), but its [Code of Conduct](https://hashnode.com/code-of-conduct) prohibits "automated or bulk posting" and self-promotion without contributing, and its [terms](https://hashnode.com/terms) allow account suspension at their discretion. A real weekly post is fine; blind, scheduled, multi-account auto-posting is the pattern they police.
-- **DEV.to** is the friendliest to drafts and review, which is exactly the workflow I landed on.
+- **Medium** is a dead end for automation, on two counts. Its [publishing API was archived in 2023](https://github.com/Medium/medium-api-docs) (no new integration tokens), and its [AI content policy](https://help.medium.com/hc/en-us/articles/22576852947223-Artificial-Intelligence-AI-content-policy) gives undisclosed AI writing "Network Only" distribution and can pull it outright. An auto-posted AI dev-log is exactly what that policy is aimed at — so Medium's off the roadmap by design, not by accident.
+- **Hashnode** has a real [publishing API](https://apidocs.hashnode.com/), but its [Code of Conduct](https://hashnode.com/code-of-conduct) bans "automated or bulk posting" and self-promotion without contributing, and its [terms](https://hashnode.com/terms) let them suspend accounts at their discretion. A genuine weekly post is fine. Blind, scheduled, multi-account auto-posting is the pattern they're watching for.
+- **DEV.to** is the friendliest to drafts and review, which is exactly the workflow I landed on anyway.
 
-The fix wasn't to publish less — it was to publish *honestly*:
+The fix wasn't to publish *less*. It was to publish honestly:
 
-- **Draft by default, human approval required.** Every platform now receives a *draft*; I review and edit it in the dashboard, then publish on-platform myself. Nothing ships unattended.
-- **A disclosure footer** on every post — a small, bold **Generated by DevNotion**. No hiding the tool.
+- **Draft by default, human approval required.** Every platform gets a *draft*; I review and edit it in the dashboard, then publish on-platform myself. Nothing ships unattended.
+- **A disclosure footer** on every post — small, bold, **Generated by DevNotion**. No hiding the tool.
 - **A `Dev log #n` title prefix**, so the series is honest about what it is.
 
-The through-line is disclosure over cleverness: a reader — and each platform's moderation — can tell exactly what this is and who stands behind it. That's cheaper to build than an evasion, and far cheaper than a suspended account.
+The thread through all of it is disclosure over cleverness. A reader — and a platform's moderation team — can tell exactly what this is and whose name is on it. That's cheaper than building some workaround, and a lot cheaper than getting an account suspended.
 
-One search — *"what are the actual rules here?"* — turned a feature I'd have rushed into a design constraint that made the whole thing more defensible. "Finished" doesn't only mean it runs; it means it won't get your accounts restricted.
+That one search turned a feature I'd have rushed into a constraint that made the whole thing more defensible. "Finished" doesn't just mean it runs. It means it won't get your accounts pulled.
 
 ## My Experience with GitHub Copilot
 
-Reviving a codebase you haven't opened in months is mostly *re-orientation* — you spend the first hours remembering your own decisions before you can improve any of them. That's exactly where AI pairing earned its place, and the wins were rarely whole functions; they were almost always *understanding*. A few moments stood out more than any autocomplete:
+Reopening a codebase you haven't touched in months is mostly just remembering. You spend the first few hours working out why past-you did what they did before you can change any of it. That's where pairing with AI actually paid off, and it was almost never "write this function." It was "help me understand this again." A few moments stuck with me more than any autocomplete:
 
-- **Diagnosing the silent bug.** The highest-value assist wasn't generated code — it was tracing *why* setting the model config changed nothing. Walking the two divergent code paths with an AI partner surfaced the split-brain config in minutes instead of an afternoon of `console.log` archaeology.
-- **The provider abstraction.** Describing "one interface, swap Gemini / OpenAI / Anthropic" in plain English produced a clean factory I refined rather than wrote from a blank file.
-- **Relearning an unfamiliar API.** Mastra's workflow primitives had shifted since I first used them. Rather than spelunking changelogs, I described the harvest → narrate → publish shape I wanted and let the assistant scaffold the `createStep`/`createWorkflow` calls, then corrected the schema wiring against the real types.
-- **Knowing when to delete.** I started wiring an AI cover via the Nano Banana API and paired to figure out its quirks — Gemini image models return bytes via `result.files`, and you call `generateText`, not a dedicated image function. The genuinely useful assist came right after: confirming the free tier's image quota was `limit: 0`, which made the call to drop the whole thing and let the deterministic stats card be the cover obvious instead of stubborn.
+- **Diagnosing the silent bug.** The most useful assist wasn't generated code — it was tracing *why* setting the model config changed nothing. Walking the two divergent code paths with an AI partner surfaced the split-brain config in minutes, instead of an afternoon of `console.log` archaeology.
+- **The provider abstraction.** Describing "one interface, swap Gemini / OpenAI / Anthropic" in plain English got me a clean factory I refined, instead of writing it from a blank file.
+- **Relearning an unfamiliar API.** Mastra's workflow primitives had shifted since I first used them. Rather than spelunking changelogs, I described the harvest → narrate → publish shape I wanted, let the assistant scaffold the `createStep`/`createWorkflow` calls, then fixed the schema wiring against the real types.
+- **Knowing when to delete.** I started wiring an AI cover via the Nano Banana API and paired to figure out its quirks — Gemini image models return bytes via `result.files`, and you call `generateText`, not some dedicated image function. The genuinely useful assist came right after: confirming the free tier's image quota was `limit: 0`, which made dropping the whole thing the obvious call instead of a stubborn one.
 - **Tests.** Generating the first pass of each unit test from the module's signature, then tightening the assertions by hand, is what made a 51-test suite cheap enough to actually write.
 
 ![GitHub Copilot in the workflow — e.g. Copilot Chat generating the provider interface, or inline completion filling a provider class](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/rq3urpk266z9yw0acckw.png)
 
-
-What changed most wasn't raw speed — it was *confidence flowing back into a cold codebase*. The AI didn't just complete lines; it helped me remember what the code did and decide where to take it next. That's the part of "finishing" nobody warns you about, and it's the part pairing helped most.
+The thing that changed most wasn't speed. It was confidence coming back into a cold codebase. It didn't just finish my lines — it helped me remember what the code did and figure out where to take it next. Nobody warns you that's the hard part of "finishing" something. That's the part pairing helped with most.
 
 ## Results & Validation
 
@@ -276,20 +273,20 @@ What changed most wasn't raw speed — it was *confidence flowing back into a co
 - The narration path was confirmed live on the free tier (`gemini-3-flash-preview`), the harvest fix verified on a real week (`+0/-0` → `+2,252/-293`), and the stats card rendered to a real 1200×630 PNG.
 - **Proven end-to-end on real weeks.** I ran v2 against three separate January 2026 weeks; each produced a Notion page and a DEV.to draft with the deterministic stats card attached as the cover — verified straight from the DEV.to API, where `cover_image` resolved to the generated card for every post.
 
-None of this is theoretical. The rebuild was verified the same way it was built — incrementally. Every phase ended with a clean `tsc` and a green suite before the next began; the failing first run became a passing one I watched end to end; and the final proof was mundane on purpose — three real weeks published as reviewable drafts, covers and all, with nothing shipped that I hadn't read first.
+None of this is theoretical. The rebuild got verified the same way it got built — incrementally. Every phase ended with a clean `tsc` and a green suite before the next one started. The failing first run became a passing one I watched run end to end. And the final proof was deliberately mundane: three real weeks, published as reviewable drafts, covers and all, with nothing shipped that I hadn't read first.
 
 ## What "finishing" actually meant
 
-I started this thinking *finishing* meant features — more platforms, prettier output, an AI cover. Almost none of the work turned out to be that. The phases that mattered were the ones that made the tool **honest**: failing loudly instead of shipping a stub, showing me the draft before it went live, putting real diffs where guesses used to be, and reading each platform's rules before automating against them.
+I came into this assuming "finishing" meant features. More platforms, nicer output, an AI cover. Almost none of it was that. The phases that actually mattered were the ones that made the tool **honest** — failing loud instead of shipping junk, showing me the draft before it went live, putting real diffs where guesses used to be, reading each platform's rules before automating against them.
 
-The clearest signal was how often "finishing" meant *deleting*. The AI cover came out. The silent fallback came out of the hot path. An entire config key that connected to nothing came out. The version that felt finished wasn't the one with the most code — it was the one I'd trust to post under my name while I wasn't watching.
+And the clearest tell? How often "finishing" turned out to mean *deleting*. The AI cover, gone. The silent fallback, out of the hot path. A whole config key wired to nothing, gone. The version that finally felt done wasn't the one with the most code. It was the one I'd trust to post under my name while I wasn't looking.
 
 ## What's Next
 
 - **The deterministic stats card is the cover** — no image quota, no API, always succeeds; one fewer moving part than the AI cover I tried and dropped.
-- **Per-platform publish resilience** — today, one platform failing fails the whole run (surfaced and retryable, but all-or-nothing); isolating each target, so a Hashnode hiccup can't block a DEV.to draft, is the top v3 item.
-- **Bidirectional Notion sync** — draft and edit in Notion, then push outward, so the review step can happen wherever you already work.
-- **Attended weekly digests** — a Monday-morning summary with the generated draft linked, so approval is one click from your inbox.
+- **Per-platform publish resilience** — right now, one platform failing fails the whole run (it's surfaced and retryable, but it's all-or-nothing). Isolating each target, so a Hashnode hiccup can't block a DEV.to draft, is the top v3 item.
+- **Bidirectional Notion sync** — draft and edit in Notion, then push outward, so the review can happen wherever you already work.
+- **Attended weekly digests** — a Monday-morning summary with the draft linked, so approving it is one click from your inbox.
 
 The repo is [yashksaini-coder/DevNotion](https://github.com/yashksaini-coder/DevNotion): `npx devnotion init`, point it at a week, and watch the draft land in the dashboard *before* anything ships. If you try it, open an issue — I read them now, and "I read them now" is its own small proof the thing is finished. ⭐ it if the rebuild resonates.
 
