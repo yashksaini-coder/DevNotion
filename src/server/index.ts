@@ -113,7 +113,8 @@ app.use((_req, res) => {
 });
 
 export function startServer(): void {
-  const port = env.DASHBOARD_PORT;
+  // Honor the platform-injected PORT (Render/Railway/Fly/Heroku); fall back to config.
+  const port = Number(process.env.PORT) || env.DASHBOARD_PORT;
   app.listen(port, () => {
     console.log(`✓ DevNotion Dashboard running at http://localhost:${port}`);
     if (!isAuthEnabled()) {
