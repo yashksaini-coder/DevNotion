@@ -22,15 +22,7 @@ DevNotion is a [Mastra](https://mastra.ai) pipeline of specialist agents: it har
 
 Three specialist agents across a pipeline that is split so generation and publishing are decoupled — a failure or an unreviewed draft never reaches your readers.
 
-```mermaid
-flowchart TD
-    A["weekStart"] --> H["1 · Harvest Agent<br/>(deterministic · GitHub GraphQL)<br/>+ per-commit deltas, touched areas"]
-    H --> N["2 · Narrator Agent<br/>(gemini-3-flash-preview)<br/>fail-loud: error → run fails, nothing published"]
-    N --> I["Stats card<br/>(deterministic SVG → PNG · used as the cover)"]
-    I --> P["draft persisted"]
-    P --> G{"Approval gate<br/>(dashboard: preview · edit · approve)"}
-    G -->|approve| PUB["3 · Publisher Agent<br/>Notion · DEV.to · Hashnode<br/>+ author/social footer"]
-```
+![Architecture diagram](assets/Architecture.png)
 
 The pipeline only uses an LLM where it adds value (narration). Harvest, the stats card, and publishing are deterministic — no token overhead, no hallucinated numbers.
 
