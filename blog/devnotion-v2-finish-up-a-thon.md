@@ -17,7 +17,7 @@ So in March I built **[DevNotion](https://github.com/yashksaini-coder/DevNotion)
 
 It *worked*. But every week I used it, I felt the gaps. It was locked to a single LLM. It published whatever it generated the instant it generated it — no preview, no edit, no undo. And when I reopened the repo for the Finish-Up-A-Thon, the **very first run failed in the most embarrassing way I can imagine** — which turned out to be the perfect place to begin.
 
-**DevNotion v2** is the version I should have shipped the first time: a pipeline that **generates a draft, shows it to you, lets you edit it, and only publishes when you approve** — backed by multiple LLM providers, three publishing targets, generated images, far richer data, and a real test suite.
+**DevNotion v2** is the version I should have shipped the first time: a pipeline that **generates a draft, shows it to you, lets you edit it, and only publishes when you approve** — backed by multiple LLM providers, three publishing targets, a deterministic stats-card cover, far richer data, and a real test suite.
 
 The one idea behind the whole rebuild: *a tool that writes in your voice and publishes under your name has to be trustworthy before it's convenient.*
 
@@ -31,16 +31,16 @@ The one idea behind the whole rebuild: *a tool that writes in your voice and pub
 
 `[Screenshot: the auto-generated weekly stats card — 13 commits · +2,252 / −293 · 3 repos]`
 
-Four specialist agents, with generation and publishing deliberately split by a human approval gate:
+Three specialist agents, with generation and publishing deliberately split by a human approval gate:
 
 ```mermaid
 flowchart TD
     A["weekStart"] --> H["1 · Harvest Agent<br/>GitHub GraphQL + per-commit deltas, touched areas"]
     H --> N["2 · Narrator Agent<br/>gemini-3-flash-preview · fail-loud"]
-    N --> I["3 · Image Agent<br/>Nano Banana cover + deterministic stats card"]
-    I --> P["draft persisted"]
+    N --> S["Stats card (deterministic SVG→PNG, used as cover)"]
+    S --> P["draft persisted"]
     P --> G{"Approval gate (dashboard)<br/>preview · edit · approve"}
-    G -->|approve| PUB["4 · Publisher Agent<br/>Notion · DEV.to · Hashnode + author footer"]
+    G -->|approve| PUB["3 · Publisher Agent<br/>Notion · DEV.to · Hashnode + author footer"]
 ```
 
 The design rule that's held since v1: **only use an LLM where it earns its keep.** Harvesting, the stats card, and publishing are deterministic — no token cost, no hallucination surface. The LLM narrates; everything around it is plain, testable code.
@@ -142,12 +142,11 @@ I tightened the narrator's instructions — character-led hooks instead of stat 
 
 It's applied at publish-build time, not by the narrator — so it can't be accidentally edited away in the preview, and Hashnode gets it for free.
 
-### Phase 5 — Images
+### Phase 5 — The cover image
 
-Each run produces two images, and the split between them is the whole point:
+My first instinct was the obvious one: an AI **cover** via Nano Banana (`gemini-2.5-flash-image`), prompted from the week's headline. I wired it up — and discovered the free tier gives image generation a quota of `limit: 0`. It never produced a single cover. That probabilistic, rate-limited dependency was buying me nothing.
 
-- An AI **cover** via Nano Banana (`gemini-2.5-flash-image`), prompted from the week's headline.
-- A **deterministic stats card** rendered from a hand-built SVG → PNG (via `@resvg/resvg-js`) with the week's *exact* numbers.
+So I deleted it, and let a piece of code I already had do the job. The **deterministic stats card** — rendered from a hand-built SVG → PNG (via `@resvg/resvg-js`) with the week's *exact* numbers — is already exactly cover/OG dimensions, 1200×630. I just made it the cover:
 
 ```typescript
 // src/images/stats-card.ts — the numbers come from code, never from a model
@@ -159,7 +158,7 @@ const stats = [
 ];
 ```
 
-AI for the evocative cover; **code** for the factual card — because an LLM would cheerfully hallucinate `2,252` into `2,000`, and a stats card with wrong stats is worse than no stats card. Image generation is best-effort: if the cover model is out of quota, the run still produces the card and the post, and simply skips the cover.
+The card now ships as the cover/social image on every target — DEV.to's `main_image`, the Hashnode cover, the Notion page cover. **Code** for the factual card means an LLM can never hallucinate `2,252` into `2,000`, and the cover went from *never working* to *always working* in the same change that deleted code: no API, no quota, no fallback path — it just renders. That's the rare refactor where the simplification and the quality win are the same move.
 
 ### Phase 6 — A dashboard worth screenshotting
 
@@ -178,7 +177,7 @@ The three dashboard routes had drifted into three slightly-different stylesheets
 | LLMs | Gemini only | Gemini / OpenAI / Anthropic |
 | Publish targets | Notion + DEV.to | + Hashnode |
 | Line stats | PR-only (`+0/-0` on commit weeks) | real per-commit deltas + touched areas |
-| Images | none | AI cover + deterministic stats card |
+| Cover image | none | Deterministic stats card, used as the cover |
 | Setup | hand-edit `.env` | `npx devnotion init` wizard |
 | Tests | a handful | 49 across 18 suites |
 
@@ -207,7 +206,7 @@ Reviving a codebase you haven't opened in months is mostly *re-orientation*, and
 
 - **Diagnosing the silent bug.** The highest-value assist wasn't generated code — it was tracing *why* setting the model config changed nothing. Walking the two divergent code paths with an AI partner surfaced the split-brain config in minutes instead of an afternoon of `console.log` archaeology.
 - **The provider abstraction.** Describing "one interface, swap Gemini / OpenAI / Anthropic" in plain English produced a clean factory I refined rather than wrote from a blank file.
-- **The image pipeline.** I didn't know the current Nano Banana API. Pairing to discover that Gemini image models return bytes via `result.files` — and that you call `generateText`, not a dedicated image function — saved a lot of trial and error.
+- **Knowing when to delete.** I started wiring an AI cover via the Nano Banana API and paired to figure out its quirks — Gemini image models return bytes via `result.files`, and you call `generateText`, not a dedicated image function. The genuinely useful assist came right after: confirming the free tier's image quota was `limit: 0`, which made the call to drop the whole thing and let the deterministic stats card be the cover obvious instead of stubborn.
 - **Tests.** Generating the first pass of each unit test from the module's signature, then tightening the assertions by hand, is what made a 38-test suite cheap enough to actually write.
 
 `[Screenshot: a real GitHub Copilot interaction from your workflow — e.g. Copilot Chat generating the provider interface, or inline completion filling a provider class]`
@@ -222,7 +221,7 @@ What changed most wasn't raw speed — it was *confidence flowing back into a co
 
 ## What's Next
 
-- **AI covers need image quota** — the deterministic stats card always works; the cover degrades gracefully without billing.
+- **The deterministic stats card is the cover** — no image quota, no API, always succeeds; one fewer moving part than the AI cover I tried and dropped.
 - **Per-platform publish resilience** — today one platform failing fails the run (surfaced and retryable); isolating each is a v3 item.
 - **Bidirectional Notion sync** — draft in Notion, push outward.
 
@@ -230,4 +229,4 @@ If you try it, open an issue — I read them now. That part's new too.
 
 ---
 
-*Built with [Mastra](https://mastra.ai), the [Vercel AI SDK](https://ai-sdk.dev), Gemini 3 Flash, Nano Banana, and the [Notion](https://developers.notion.com) / [DEV.to](https://developers.forem.com/api) / [Hashnode](https://apidocs.hashnode.com/) APIs. By [Yash K Saini](https://yashksaini.vercel.app/) — [GitHub](https://github.com/yashksaini-coder) · [X](https://x.com/0xcrackedDev) · [LinkedIn](https://www.linkedin.com/in/yashksaini). Star it if it made you smile.*
+*Built with [Mastra](https://mastra.ai), the [Vercel AI SDK](https://ai-sdk.dev), Gemini 3 Flash for narration, `@resvg/resvg-js` for the stats-card cover, and the [Notion](https://developers.notion.com) / [DEV.to](https://developers.forem.com/api) / [Hashnode](https://apidocs.hashnode.com/) APIs. By [Yash K Saini](https://yashksaini.vercel.app/) — [GitHub](https://github.com/yashksaini-coder) · [X](https://x.com/0xcrackedDev) · [LinkedIn](https://www.linkedin.com/in/yashksaini). Star it if it made you smile.*
