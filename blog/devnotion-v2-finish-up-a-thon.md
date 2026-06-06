@@ -7,7 +7,7 @@ cover_image:
 
 *This is a submission for the [GitHub Finish-Up-A-Thon Challenge](https://dev.to/challenges/github-2026-05-21)*
 
-> **[Editor's note — delete before publishing]** Search for **`REPLACE_WITH_IMAGE_URL`** and swap each one for a real image URL (drag a file into the DEV.to editor to host it, then paste the URL). Set a `cover_image:` too — the weekly stats card works well as the cover. In *"My Experience with GitHub Copilot"* keep only what matches your actual usage. Everything else is finished prose.
+> **[Editor's note — delete before publishing]** Search for **`REPLACE_WITH_IMAGE_URL`** and swap each one for a real image URL (drag a file into the DEV.to editor to host it, then paste the URL). Set a `cover_image:` too — the weekly stats card works well as the cover. In *"My Experience with GitHub Copilot"* keep only what matches your actual usage. The `{% github %}` lines are DEV.to **liquid embeds** — they render as rich repo cards on the platform, so ignore how they look in plain markdown. Everything else is finished prose.
 
 ## What I Built
 
@@ -24,6 +24,8 @@ The one idea behind the whole rebuild: *a tool that writes in your voice and pub
 ## Demo
 
 **Repo:** [github.com/yashksaini-coder/DevNotion](https://github.com/yashksaini-coder/DevNotion)
+
+{% github yashksaini-coder/DevNotion %}
 
 ![Dashboard run history — dark UI, status badges (Preview Ready / Published), Review & Publish actions](REPLACE_WITH_IMAGE_URL)
 
@@ -289,6 +291,10 @@ The clearest signal was how often "finishing" meant *deleting*. The AI cover cam
 - **Attended weekly digests** — a Monday-morning summary with the generated draft linked, so approval is one click from your inbox.
 
 The repo is [yashksaini-coder/DevNotion](https://github.com/yashksaini-coder/DevNotion): `npx devnotion init`, point it at a week, and watch the draft land in the dashboard *before* anything ships. If you try it, open an issue — I read them now, and "I read them now" is its own small proof the thing is finished. ⭐ it if the rebuild resonates.
+
+{% github yashksaini-coder/DevNotion %}
+
+**Connect:** [GitHub](https://github.com/yashksaini-coder) · [X](https://x.com/0xcrackedDev) · [LinkedIn](https://www.linkedin.com/in/yashksaini) · [Portfolio](https://yashksaini.vercel.app/)
 
 ---
 
