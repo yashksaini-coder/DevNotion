@@ -264,7 +264,8 @@ Reviving a codebase you haven't opened in months is mostly *re-orientation* — 
 - **Knowing when to delete.** I started wiring an AI cover via the Nano Banana API and paired to figure out its quirks — Gemini image models return bytes via `result.files`, and you call `generateText`, not a dedicated image function. The genuinely useful assist came right after: confirming the free tier's image quota was `limit: 0`, which made the call to drop the whole thing and let the deterministic stats card be the cover obvious instead of stubborn.
 - **Tests.** Generating the first pass of each unit test from the module's signature, then tightening the assertions by hand, is what made a 51-test suite cheap enough to actually write.
 
-![GitHub Copilot in the workflow — e.g. Copilot Chat generating the provider interface, or inline completion filling a provider class](REPLACE_WITH_IMAGE_URL)
+![GitHub Copilot in the workflow — e.g. Copilot Chat generating the provider interface, or inline completion filling a provider class](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/rq3urpk266z9yw0acckw.png)
+
 
 What changed most wasn't raw speed — it was *confidence flowing back into a cold codebase*. The AI didn't just complete lines; it helped me remember what the code did and decide where to take it next. That's the part of "finishing" nobody warns you about, and it's the part pairing helped most.
 
