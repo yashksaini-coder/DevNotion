@@ -108,12 +108,21 @@ export function isUnlocked(req: { headers: { cookie?: string } }): boolean {
 
 // ─── brute-force throttle on credential attempts (the unlock token is a guessable PIN) ───
 
-export const MAX_LOGIN_ATTEMPTS = 5;
+export const MAX_LOGIN_ATTEMPTS = 5; // per IP per window
 export const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+// Defense-in-depth vs DISTRIBUTED guessing (many IPs, each under the per-IP cap) of the
+// small PIN keyspace: a global cap across all IPs per window. Trade-off — a sustained
+// attack can lock everyone out for the window; acceptable for a single-user dashboard,
+// where a brief lockout beats a cracked publish credential. (A longer token is strictly
+// better; this is a backstop, not a substitute.)
+export const GLOBAL_MAX_FAILURES = 50;
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+let globalFailures = 0;
+let globalResetAt = 0;
 
 /** Whether `ip` may still attempt a credential check (under the per-window cap). */
 export function loginAllowed(ip: string, now: number = Date.now()): boolean {
+  if (now < globalResetAt && globalFailures >= GLOBAL_MAX_FAILURES) return false; // global backstop
   const a = loginAttempts.get(ip);
   if (!a || now >= a.resetAt) return true;
   return a.count < MAX_LOGIN_ATTEMPTS;
@@ -122,11 +131,16 @@ export function loginAllowed(ip: string, now: number = Date.now()): boolean {
 /** Record a failed credential attempt for `ip` (starts/extends the lockout window). */
 export function recordLoginFailure(ip: string, now: number = Date.now()): void {
   const a = loginAttempts.get(ip);
-  if (!a || now >= a.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
-    return;
+  if (!a || now >= a.resetAt) loginAttempts.set(ip, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+  else a.count += 1;
+
+  // Global backstop counter (distributed brute force across many IPs).
+  if (now >= globalResetAt) {
+    globalFailures = 1;
+    globalResetAt = now + LOGIN_WINDOW_MS;
+  } else {
+    globalFailures += 1;
   }
-  a.count += 1;
 }
 
 /** Clear the failure counter for `ip` (call on a successful unlock). */

@@ -11,6 +11,7 @@ import {
   recordLoginFailure,
   clearLoginAttempts,
   MAX_LOGIN_ATTEMPTS,
+  GLOBAL_MAX_FAILURES,
   LOGIN_WINDOW_MS,
   SESSION_TTL_MS,
   SESSION_COOKIE,
@@ -108,6 +109,13 @@ describe('login rate limiting (brute-force throttle)', () => {
     for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) recordLoginFailure('rl-attacker', t0);
     expect(loginAllowed('rl-attacker', t0)).toBe(false);
     expect(loginAllowed('rl-innocent', t0)).toBe(true);
+  });
+
+  it('global cap blocks ALL IPs once distributed failures exceed the threshold', () => {
+    const t = 10_000_000; // far from other tests so the global window is fresh
+    for (let i = 0; i < GLOBAL_MAX_FAILURES; i++) recordLoginFailure(`dist-${i}`, t); // distinct IPs
+    expect(loginAllowed('a-fresh-ip', t)).toBe(false); // global lockout, even for an unseen IP
+    expect(loginAllowed('a-fresh-ip', t + LOGIN_WINDOW_MS)).toBe(true); // window reset
   });
 });
 

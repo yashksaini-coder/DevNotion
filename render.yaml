@@ -1,0 +1,38 @@
+# Render blueprint — DevNotion public dashboard (Docker).
+# Deploy: push to GitHub → Render → New → Blueprint → select this repo,
+# then fill the `sync: false` secrets in the Render dashboard.
+# (Swap to Railway/Fly if you prefer — the Dockerfile is platform-agnostic.)
+services:
+  - type: web
+    name: devnotion-dashboard
+    runtime: docker
+    plan: free               # note: free web services sleep on inactivity (cold start)
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production              # enables trust-proxy + Secure session cookie
+      - key: PUBLISH_TARGETS
+        value: notion,devto
+      - key: DASHBOARD_PASSWORD_HASH   # scrypt of your unlock token (e.g. of "19012004")
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_USERNAME
+        sync: false
+      - key: GOOGLE_API_KEYS
+        sync: false
+      - key: NOTION_TOKEN
+        sync: false
+      - key: NOTION_PARENT_PAGE_ID
+        sync: false
+      - key: DEVTO_API_KEY
+        sync: false
+      - key: IMAGE_PUBLIC_BASE_URL     # public base so the stats-card cover attaches on publish
+        sync: false
+    # Run history is in-memory on the free plan (resets on each redeploy). To persist it,
+    # switch to a paid plan, uncomment the disk, and add DEVNOTION_RUNS_PATH=/data/runs.json:
+    # disk:
+    #   name: devnotion-data
+    #   mountPath: /data
+    #   sizeGB: 1
