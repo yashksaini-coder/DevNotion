@@ -3,13 +3,18 @@ import { join } from 'node:path';
 import { env } from '../config/env.js';
 import { STYLES } from './views/layout.js';
 import { authMiddleware } from './middleware/auth.js';
-import { isAuthEnabled, verifyPassword, createSession, destroySession, readCookie, safeInternalPath, SESSION_COOKIE, SESSION_TTL_MS } from './auth.js';
+import { isAuthEnabled, verifyPassword, createSession, destroySession, readCookie, safeInternalPath, loginAllowed, recordLoginFailure, clearLoginAttempts, SESSION_COOKIE, SESSION_TTL_MS } from './auth.js';
 import { landingRouter } from './routes/landing.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { runRouter } from './routes/run.js';
 import { previewRouter } from './routes/preview.js';
 
 const app = express();
+// Trust a proxy ONLY in production (deploy behind EXACTLY ONE trusted TLS-terminating
+// proxy). Locally / in Docker without a real proxy, X-Forwarded-For is attacker-controlled,
+// so req.ip must stay the real socket peer there — otherwise the per-IP brute-force
+// throttle is bypassable by rotating a spoofed XFF header on every request.
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
 
 // Parse URL-encoded form bodies and JSON
 app.use(express.urlencoded({ extended: false }));
@@ -60,13 +65,27 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
+  const ip = req.ip ?? 'unknown';
+  // Throttle brute force — the unlock token is a short, guessable PIN.
+  if (!loginAllowed(ip)) {
+    res.status(429).send('Too many attempts — please wait a few minutes and try again.');
+    return;
+  }
   const { password, redirect } = req.body as { password?: string; redirect?: string };
   const target = safeInternalPath(redirect);
   if (password && verifyPassword(password)) {
+    clearLoginAttempts(ip);
     const sessionId = createSession();
-    res.cookie(SESSION_COOKIE, sessionId, { httpOnly: true, sameSite: 'lax', maxAge: SESSION_TTL_MS, path: '/' });
+    res.cookie(SESSION_COOKIE, sessionId, {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: SESSION_TTL_MS,
+      path: '/',
+    });
     res.redirect(target);
   } else {
+    recordLoginFailure(ip);
     res.redirect(`/login?redirect=${encodeURIComponent(target)}&error=1`);
   }
 });
@@ -98,7 +117,9 @@ export function startServer(): void {
   app.listen(port, () => {
     console.log(`✓ DevNotion Dashboard running at http://localhost:${port}`);
     if (!isAuthEnabled()) {
-      console.warn('⚠ No DASHBOARD_PASSWORD set — dashboard is publicly accessible on this port');
+      console.warn('⚠ No DASHBOARD_PASSWORD/HASH set — dashboard is view-only and ALL mutations (run, publish, delete) are blocked (fail-closed). Set DASHBOARD_PASSWORD_HASH to enable them.');
+    } else {
+      console.log('🔒 Public view enabled; mutations (run/publish/delete) require the dashboard token.');
     }
   });
 }

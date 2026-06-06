@@ -7,6 +7,11 @@ import {
   destroySession,
   readCookie,
   safeInternalPath,
+  loginAllowed,
+  recordLoginFailure,
+  clearLoginAttempts,
+  MAX_LOGIN_ATTEMPTS,
+  LOGIN_WINDOW_MS,
   SESSION_TTL_MS,
   SESSION_COOKIE,
 } from '../server/auth.js';
@@ -69,6 +74,40 @@ describe('safeInternalPath (open-redirect guard)', () => {
     for (const bad of ['//evil.com', '/\\evil.com', '/\\/evil.com', 'https://evil.com', 'http://x', 'evil.com', '/', '', undefined, null, 42]) {
       expect(safeInternalPath(bad)).toBe('/runs');
     }
+  });
+});
+
+describe('login rate limiting (brute-force throttle)', () => {
+  it('allows attempts up to the cap, then blocks within the window', () => {
+    const ip = 'rl-cap';
+    const t0 = 5_000_000;
+    expect(loginAllowed(ip, t0)).toBe(true);
+    for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) recordLoginFailure(ip, t0);
+    expect(loginAllowed(ip, t0)).toBe(false);
+  });
+
+  it('resets after the window elapses', () => {
+    const ip = 'rl-window';
+    const t0 = 6_000_000;
+    for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) recordLoginFailure(ip, t0);
+    expect(loginAllowed(ip, t0)).toBe(false);
+    expect(loginAllowed(ip, t0 + LOGIN_WINDOW_MS)).toBe(true);
+  });
+
+  it('a successful clear unblocks immediately', () => {
+    const ip = 'rl-clear';
+    const t0 = 7_000_000;
+    for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) recordLoginFailure(ip, t0);
+    expect(loginAllowed(ip, t0)).toBe(false);
+    clearLoginAttempts(ip);
+    expect(loginAllowed(ip, t0)).toBe(true);
+  });
+
+  it('does not block a different IP', () => {
+    const t0 = 8_000_000;
+    for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) recordLoginFailure('rl-attacker', t0);
+    expect(loginAllowed('rl-attacker', t0)).toBe(false);
+    expect(loginAllowed('rl-innocent', t0)).toBe(true);
   });
 });
 

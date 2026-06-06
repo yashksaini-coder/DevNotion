@@ -150,3 +150,32 @@ export function page(opts: PageOpts): string {
 </body>
 </html>`;
 }
+
+/** Escape untrusted text for safe interpolation into HTML (attributes + text). */
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Token-entry component for the publish gate. Posts the token to /login (which sets a
+ * 10-minute unlock session) and returns to `redirect`. The input is named `password`
+ * to match the /login handler; `redirect` must be an internal path (safeInternalPath).
+ */
+export function tokenGate(redirect: string, message = 'Enter the token to unlock publishing'): string {
+  return /* html */ `
+    <div class="card" style="border-color:var(--accent)">
+      <h2 style="font-size:1rem;margin-bottom:0.25rem">🔒 View-only</h2>
+      <p style="font-size:0.85rem;color:#a1a1aa;margin-bottom:0.75rem">${escapeHtml(message)}</p>
+      <form method="POST" action="/login" style="display:flex;gap:0.5rem;align-items:center">
+        <input type="hidden" name="redirect" value="${escapeHtml(redirect)}">
+        <input type="password" name="password" placeholder="Token" autocomplete="off" required
+          style="flex:1;background:#0f0f0f;border:1px solid #27272a;border-radius:0.4rem;padding:0.55rem;color:#e5e5e5">
+        <button type="submit" class="btn btn-primary btn-sm">Unlock</button>
+      </form>
+    </div>`;
+}

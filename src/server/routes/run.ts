@@ -2,21 +2,38 @@ import { Router, type IRouter } from 'express';
 import { createRun, getRun, updateRun } from '../store.js';
 import { env } from '../../config/env.js';
 import { getLastMonday } from '../../utils/dates.js';
-import { page } from '../views/layout.js';
+import { page, tokenGate } from '../views/layout.js';
+import { isUnlocked } from '../auth.js';
 
 export const runRouter: IRouter = Router();
 
 // GET /run — trigger form
-runRouter.get('/', (_req, res) => {
+runRouter.get('/', (req, res) => {
   const defaultWeek = getLastMonday();
   const currentTargets = env.PUBLISH_TARGETS.join(', ');
+  const unlocked = isUnlocked(req);
 
-  const body = /* html */ `
+  const info = /* html */ `
     <div class="notice">
       <strong>Publish targets:</strong> ${currentTargets} &nbsp;·&nbsp;
       <strong>Mode:</strong> ${env.PUBLISH_MODE} &nbsp;·&nbsp;
       <strong>LLM:</strong> ${env.LLM_PROVIDER}
-    </div>
+    </div>`;
+
+  if (!unlocked) {
+    const lockedBody = /* html */ `
+      ${info}
+      <div class="card">
+        <h2>Start New Run</h2>
+        <p style="font-size:0.9rem;color:#a1a1aa;margin-bottom:0.5rem">Triggering a run harvests GitHub activity and calls the LLM, so it's token-gated.</p>
+      </div>
+      ${tokenGate('/run', 'Enter the token to trigger a run.')}`;
+    res.send(page({ title: 'New Run · DevNotion', activeNav: 'run', body: lockedBody }));
+    return;
+  }
+
+  const body = /* html */ `
+    ${info}
     <div class="card">
       <h2>Start New Run</h2>
       <form id="runForm" method="POST" action="/run">

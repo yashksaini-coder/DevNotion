@@ -91,3 +91,45 @@ export function readCookie(cookieHeader: string | undefined, name: string): stri
   }
   return undefined;
 }
+
+// ─── request-level unlock check (read-only — for rendering locked vs unlocked UI) ───
+
+/**
+ * True if the request carries a valid unlock SESSION cookie. Does NOT mutate.
+ *
+ * Deliberately session-cookie-only: a Bearer token must NOT flip a public GET page to
+ * "unlocked", because verifyPassword() here would run on the unthrottled public GET path
+ * and become a brute-force oracle for the PIN. Sessions are obtainable only through the
+ * rate-limited /login POST; Bearer still authorizes mutations in authMiddleware (throttled).
+ */
+export function isUnlocked(req: { headers: { cookie?: string } }): boolean {
+  return isSessionValid(readCookie(req.headers.cookie, SESSION_COOKIE));
+}
+
+// ─── brute-force throttle on credential attempts (the unlock token is a guessable PIN) ───
+
+export const MAX_LOGIN_ATTEMPTS = 5;
+export const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+/** Whether `ip` may still attempt a credential check (under the per-window cap). */
+export function loginAllowed(ip: string, now: number = Date.now()): boolean {
+  const a = loginAttempts.get(ip);
+  if (!a || now >= a.resetAt) return true;
+  return a.count < MAX_LOGIN_ATTEMPTS;
+}
+
+/** Record a failed credential attempt for `ip` (starts/extends the lockout window). */
+export function recordLoginFailure(ip: string, now: number = Date.now()): void {
+  const a = loginAttempts.get(ip);
+  if (!a || now >= a.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return;
+  }
+  a.count += 1;
+}
+
+/** Clear the failure counter for `ip` (call on a successful unlock). */
+export function clearLoginAttempts(ip: string): void {
+  loginAttempts.delete(ip);
+}

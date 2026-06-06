@@ -1,6 +1,7 @@
 import { Router, type IRouter } from 'express';
 import { getRun } from '../store.js';
-import { page } from '../views/layout.js';
+import { page, tokenGate } from '../views/layout.js';
+import { isUnlocked } from '../auth.js';
 
 export const previewRouter: IRouter = Router();
 
@@ -21,6 +22,7 @@ previewRouter.get('/:jobId', (req, res) => {
     return;
   }
 
+  const unlocked = isUnlocked(req);
   const isRunning = run.status === 'pending' || run.status === 'running';
   const isPublishing = run.status === 'publishing';
   const isFailed = run.status === 'failed';
@@ -28,13 +30,13 @@ previewRouter.get('/:jobId', (req, res) => {
 
   const links = [
     run.result?.notionPageUrl
-      ? `<a href="${run.result.notionPageUrl}" target="_blank" class="platform-link">📓 Notion</a>`
+      ? `<a href="${escapeHtml(run.result.notionPageUrl)}" target="_blank" rel="noopener" class="platform-link">📓 Notion</a>`
       : '',
     run.result?.devtoUrl
-      ? `<a href="${run.result.devtoUrl}" target="_blank" class="platform-link">🔗 DEV.to</a>`
+      ? `<a href="${escapeHtml(run.result.devtoUrl)}" target="_blank" rel="noopener" class="platform-link">🔗 DEV.to</a>`
       : '',
     run.result?.hashnodeUrl
-      ? `<a href="${run.result.hashnodeUrl}" target="_blank" class="platform-link">⚡ Hashnode</a>`
+      ? `<a href="${escapeHtml(run.result.hashnodeUrl)}" target="_blank" rel="noopener" class="platform-link">⚡ Hashnode</a>`
       : '',
   ]
     .filter(Boolean)
@@ -83,11 +85,15 @@ previewRouter.get('/:jobId', (req, res) => {
       <div class="img-row">
         <img src="/generated/${escapeHtml(run.images.statsCardPath.replace(/^.*assets[\\/]generated[\\/]/, '').replace(/\\\\/g, '/'))}" alt="cover">
       </div>` : ''}
-      <form method="POST" action="/publish/${run.jobId}" style="margin-top:1.25rem">
+      ${unlocked ? `
+      <form method="POST" action="/run/publish/${run.jobId}" style="margin-top:1.25rem">
         <label style="display:block;font-size:0.8rem;color:#a1a1aa;margin-bottom:0.4rem">Edit the post before publishing (markdown)</label>
         <textarea name="editedContent" style="width:100%;min-height:380px;background:#0f0f0f;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem;color:#e5e5e5;font-family:'SF Mono',monospace;font-size:0.85rem;line-height:1.5">${escapeHtml(run.editedContent ?? run.result.content)}</textarea>
         <button type="submit" class="btn btn-primary" style="margin-top:1rem">Approve &amp; Publish →</button>
-      </form>
+      </form>` : `
+      <label style="display:block;font-size:0.8rem;color:#a1a1aa;margin:1.25rem 0 0.4rem">Generated post (read-only)</label>
+      <textarea readonly aria-readonly="true" style="width:100%;min-height:380px;background:#0f0f0f;border:1px solid #27272a;border-radius:0.5rem;padding:0.75rem;color:#e5e5e5;font-family:'SF Mono',monospace;font-size:0.85rem;line-height:1.5;opacity:0.85">${escapeHtml(run.editedContent ?? run.result.content)}</textarea>
+      <div style="margin-top:1rem">${tokenGate(`/preview/${run.jobId}`, 'Enter the token to edit and publish this draft.')}</div>`}
     </div>
 
     <div class="card">
