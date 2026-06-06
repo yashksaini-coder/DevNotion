@@ -7,4 +7,8 @@ dist/
 .turbo/
 .claude/
 .mastra/
+.superpowers/
+assets/generated/
+.devnotion-runs.json
 devnotion_revival_masterplan.md
+.remember/

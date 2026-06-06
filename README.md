@@ -1,90 +1,109 @@
 # DevNotion
 
-A 3-agent [Mastra](https://mastra.ai) pipeline that transforms your weekly GitHub contributions into blog posts on **Notion** and **DEV.to** — fully automated via CI. Built for the [DEV.to x Notion MCP Challenge](https://dev.to/challenges/notion-2026-03-04).
+**Turn your weekly GitHub activity into a polished, illustrated blog post — narrated by an LLM, reviewed by you, and published to Notion, DEV.to, and Hashnode.**
 
-<img src="./assets/Architecture.png" alt="DevNotion Architecture" />
+DevNotion is a [Mastra](https://mastra.ai) pipeline of specialist agents: it harvests a week of your GitHub work, narrates it into a first-person post, generates images, and lets you preview/edit before it publishes anywhere. Originally built for the DEV.to × Notion MCP Challenge (where it won $500); **v2** was rebuilt for the [GitHub Finish-Up-A-Thon](https://dev.to/challenges/github-2026-05-21) with multi-LLM support, a review dashboard, image generation, richer harvesting, and a fail-safe publishing flow.
 
-## What It Does
+## What's new in v2
 
-Every Sunday (or on-demand via CI), DevNotion:
-
-1. **Harvests** your GitHub activity via GraphQL — commits, PRs, issues, reviews, discussions, language stats, and contribution streak
-2. **Narrates** the data into a first-person blog post using Gemini — casual, playful, written as the developer
-3. **Publishes** to two platforms:
-   - **Notion** — planner-style page with stats tables, repo breakdowns, PR/issue/review tables, and the full blog post
-   - **DEV.to** — draft article with canonical URL pointing back to Notion
+| | v1 | v2 |
+|---|---|---|
+| **LLM** | Gemini only | Gemini · OpenAI · Anthropic (provider abstraction; default `gemini-3-flash-preview`) |
+| **Publish targets** | Notion + DEV.to | Notion + DEV.to + **Hashnode** |
+| **Flow** | generate → publish immediately | **generate → preview → edit → approve → publish** |
+| **UI** | none (CLI/cron) | **web dashboard** (trigger, preview, edit, history) |
+| **Images** | none | **deterministic stats card, doubling as the cover/social image** |
+| **Harvest** | PR-only line stats | **real per-commit deltas, changed files, touched areas** |
+| **Footer** | none | **author/social footer** on every post |
+| **Failure** | silent fallback could publish a stub | **fail-loud** — a bad run publishes nothing |
+| **Setup** | hand-edit `.env` | `npx devnotion init` guided wizard |
 
 ## Architecture
 
-| Step | Agent | LLM? | What it does |
-|------|-------|------|--------------|
-| Harvest | `github-harvest-agent` | No | Fetches weekly GitHub data via GraphQL (deterministic) |
-| Narrate | `narrator-agent` | Yes (Gemini) | Writes a first-person blog post from the data |
-| Publish | `publisher-agent` | No | Creates Notion page + DEV.to draft via direct APIs |
+Three specialist agents across a pipeline that is split so generation and publishing are decoupled — a failure or an unreviewed draft never reaches your readers.
 
-The pipeline only uses an LLM where it adds value (narration). Harvest and publish are deterministic — no token overhead, no hallucination risk.
+![Architecture diagram](assets/Architecture.png)
 
-### MCP Integration
+The pipeline only uses an LLM where it adds value (narration). Harvest, the stats card, and publishing are deterministic — no token overhead, no hallucinated numbers.
 
-The publisher agent integrates with the [Notion MCP Server](https://github.com/makenotion/notion-mcp-server) (`@notionhq/notion-mcp-server`) via `@mastra/mcp`, giving it the full Notion API surface in the Mastra playground. The automated workflow uses direct API calls for reliability, with the Notion Markdown Content API for rich page content.
+## Screenshots
 
-### Narration Fallback Chain
+**Dashboard** — run history with status badges and Review & Publish actions:
 
-1. **Gemini generation** — YAML frontmatter + markdown blog post
-2. **Deterministic fallback** — builds a basic post from raw data (zero LLM dependency)
+![DevNotion dashboard](assets/Dashboard.png)
 
-A blog post is always generated, even if the LLM is unavailable.
+**Preview & edit** — read the generated draft, tweak it in the browser, then approve:
+
+![Preview and edit screen](assets/Edit-Review.png)
+
+**Public landing page** — Swiss hero with social links:
+
+![DevNotion landing page](assets/Landing.png)
+
+## Key features
+
+- **Multi-LLM** — set `LLM_PROVIDER=gemini|openai|anthropic`. Default model is `gemini-3-flash-preview` (free tier eligible). One source of truth for model selection.
+- **Preview → edit → publish gate** — the dashboard generates a draft, shows it (with images) for review and in-browser markdown editing, and publishes only on **Approve**. The headless/cron path can default to drafts.
+- **Diff-enriched harvest** — real per-repo/commit line deltas, changed-file counts, commit messages, and the top directories you touched (e.g. `src/server`) — so the narration is specific, not generic.
+- **Cover image** — a deterministic stats card (SVG → PNG, 1200×630) that leads with the post title (wrapped to fit) and the week's exact metrics — commits, PRs, reviews, lines changed, repos. Used as the cover/social image on every target (DEV.to `main_image`, Hashnode cover, Notion page cover). No API, no quota — best-effort and never blocks a run.
+- **Author/social footer** — name, bio, and links rendered on every post from one config (`src/config/author.ts`).
+- **Fail-loud** — if narration hits a quota/parse error, the run is marked failed and nothing is published (no silent fallback stub).
+- **Rate-limited & resilient** — `p-queue` + `p-retry` wrappers per API (Notion, DEV.to, Hashnode, GitHub).
 
 ## Quick Start
 
 ### Prerequisites
+- Node.js 22+, pnpm
+- GitHub personal access token (`ghp_…`, scopes: `read:user`, `repo`, `read:org`)
+- An LLM key: Google AI Studio ([free keys](https://aistudio.google.com)), or OpenAI, or Anthropic
+- Notion integration token + parent page ID ([setup](https://developers.notion.com/docs/create-a-notion-integration))
+- Optional: DEV.to API key, Hashnode token + publication ID
 
-- Node.js 22+
-- pnpm
-- GitHub personal access token (`ghp_`)
-- Google AI Studio API key(s) ([get here](https://aistudio.google.com))
-- Notion integration token + parent page ID ([setup guide](https://developers.notion.com/docs/create-a-notion-integration))
-- DEV.to API key (optional — [Settings → Extensions → API Keys](https://dev.to/settings/extensions))
-<!-- 
 ### Setup
 
 ```bash
 git clone https://github.com/yashksaini-coder/DevNotion.git
 cd DevNotion
 pnpm install
+npx devnotion init   # guided wizard — validates each credential as you enter it
 ```
 
-Copy `.env.example` to `.env.local` and fill in your keys:
-
-```bash
-cp .env.example .env.local
-```
+`init` writes a `.env.local` and live-checks GitHub, your LLM provider, Notion, and any publish targets you enable. (Or copy `.env.example` to `.env.local` and fill it in by hand.)
 
 ### Run
 
 ```bash
-# Run for the current week
-pnpm dev
-
-# Run for a specific week
-pnpm dev -- --week=2026-03-16
-
-# Open the Mastra playground (agent testing UI)
-pnpm playground
+pnpm dashboard                 # web dashboard at http://localhost:3000 (recommended)
+pnpm dev                       # run the pipeline for the current week (CLI)
+pnpm dev -- --week=2026-03-16  # run for a specific week
+pnpm playground                # Mastra playground (agent testing UI)
+pnpm test                      # vitest suite
 ```
--->
+
+The **dashboard** is the main entry point: trigger a run, watch it reach *Preview Ready*, review/edit the post and images, then **Approve & Publish**.
 
 ### CI (GitHub Actions)
 
-The workflow runs automatically every Sunday at 08:00 UTC. You can also trigger it manually:
+Runs automatically every Sunday at 08:00 UTC, or manually via **Actions → Weekly Blog Dispatch → Run workflow**. Required secrets: `GH_TOKEN`, `GH_USERNAME`, `GOOGLE_API_KEYS`, `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID`, and any publish-target keys.
 
-**Actions → Weekly Blog Dispatch → Run workflow** (optionally provide a `YYYY-MM-DD` week start)
+## Configuration (selected env)
 
-Required secrets: `GH_TOKEN`, `GH_USERNAME`, `GOOGLE_API_KEYS`, `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID`, `DEVTO_API_KEY`
+```bash
+LLM_PROVIDER=gemini                  # gemini | openai | anthropic
+# LLM_MODEL=gemini-3-flash-preview   # override the per-provider default
+# NARRATION_MAX_TOKENS=8192          # output budget (Gemini 3 is a thinking model)
+PUBLISH_TARGETS=notion,devto         # comma-separated: notion, devto, hashnode
+PUBLISH_MODE=auto                    # auto = publish live | draft = save as drafts
+BLOG_TONE=casual                     # casual | professional | technical | storytelling
+# FOCUS_AREAS=TypeScript performance,open source
+# GENERATE_IMAGES=true               # cover + stats card
+# IMAGE_PUBLIC_BASE_URL=             # public base URL so images attach on publish
+# DASHBOARD_PASSWORD=                 # optional — protect the dashboard (scrypt-hashed; 10-min session)
+```
+
+> **Note on images:** the cover/social image is a deterministic stats card rendered locally (resvg) — no API or quota needed. Set `IMAGE_PUBLIC_BASE_URL` to a public base (e.g. the raw repo URL) so the card resolves to a public URL and attaches as the cover on DEV.to/Hashnode/Notion; without it the card is still generated locally but not attached.
 
 ## Blog Tone Profiles
-
-Set `BLOG_TONE` in your `.env.local` (default: `casual`):
 
 | Tone | Style |
 |------|-------|
@@ -93,26 +112,13 @@ Set `BLOG_TONE` in your `.env.local` (default: `casual`):
 | `technical` | Deep-dive, architecture-focused, conversational |
 | `storytelling` | Personal dev diary, honest and engaging |
 
-## Notion Page Format
-
-Each week creates a planner-style Notion page with:
-
-- **Published Links** — Notion page + DEV.to draft edit link
-- **Week at a Glance** — stats table (commits, PRs, issues, reviews, lines changed)
-- **Active Repositories** — repo table with commits, language, changes
-- **Pull Requests / Issues / Reviews / Discussions** — structured tables
-- **Languages** — top languages by commit count
-- **Blog Post** — the full narrated content
-
-
 ## Tech Stack
 
-- **[Mastra](https://mastra.ai)** — Agent framework with workflows, tools, and MCP support
-- **[Gemini](https://aistudio.google.com)** — LLM provider (key rotation for rate limits)
-- **[Notion API](https://developers.notion.com)** — Page creation + Markdown Content API
-- **[Notion MCP Server](https://github.com/makenotion/notion-mcp-server)** — Model Context Protocol integration
-- **[DEV.to API](https://developers.forem.com/api)** — Draft article publishing
-- **GitHub Actions** — Weekly cron + manual dispatch CI
+- **[Mastra](https://mastra.ai)** — agent/workflow framework (+ Notion MCP in the playground)
+- **[Vercel AI SDK](https://ai-sdk.dev)** — unified LLM interface (`@ai-sdk/google` · `openai` · `anthropic`)
+- **Gemini 3 Flash** (narration) · **@resvg/resvg-js** (deterministic stats-card cover)
+- **[Notion API](https://developers.notion.com)** · **[DEV.to API](https://developers.forem.com/api)** · **[Hashnode GraphQL](https://apidocs.hashnode.com/)**
+- **Express** dashboard · **Zod** · **Vitest** · **GitHub Actions** (weekly cron + manual dispatch)
 
 ---
 

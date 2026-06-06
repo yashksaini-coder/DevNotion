@@ -77,22 +77,25 @@ export async function publishToHashnode(opts: {
   tags: string[];
   subtitle?: string;
   draft?: boolean;
+  coverImageUrl?: string;
 }): Promise<{ postId: string; postUrl: string; isDraft: boolean }> {
   const tags = buildTags(opts.tags);
   const publicationId = env.HASHNODE_PUBLICATION_ID!;
 
   if (opts.draft) {
+    const draftInput: Record<string, unknown> = {
+      title: opts.title,
+      subtitle: opts.subtitle,
+      contentMarkdown: opts.contentMarkdown,
+      tags,
+      publicationId,
+    };
+    if (opts.coverImageUrl) {
+      draftInput.coverImageOptions = { coverImageURL: opts.coverImageUrl };
+    }
     const data = await hashnodeRequest<{ createDraft: { draft: { id: string; title: string } } }>(
       CREATE_DRAFT_MUTATION,
-      {
-        input: {
-          title: opts.title,
-          subtitle: opts.subtitle,
-          contentMarkdown: opts.contentMarkdown,
-          tags,
-          publicationId,
-        },
-      },
+      { input: draftInput },
     );
     const draft = data.createDraft.draft;
     // Hashnode drafts don't have a direct URL — construct from publication
@@ -103,17 +106,19 @@ export async function publishToHashnode(opts: {
     };
   }
 
+  const publishInput: Record<string, unknown> = {
+    title: opts.title,
+    subtitle: opts.subtitle,
+    contentMarkdown: opts.contentMarkdown,
+    tags,
+    publicationId,
+  };
+  if (opts.coverImageUrl) {
+    publishInput.coverImageOptions = { coverImageURL: opts.coverImageUrl };
+  }
   const data = await hashnodeRequest<{
     publishPost: { post: { id: string; url: string; title: string; publishedAt: string } };
-  }>(PUBLISH_POST_MUTATION, {
-    input: {
-      title: opts.title,
-      subtitle: opts.subtitle,
-      contentMarkdown: opts.contentMarkdown,
-      tags,
-      publicationId,
-    },
-  });
+  }>(PUBLISH_POST_MUTATION, { input: publishInput });
 
   const post = data.publishPost.post;
   return { postId: post.id, postUrl: post.url, isDraft: false };

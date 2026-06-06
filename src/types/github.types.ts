@@ -7,6 +7,10 @@ export const RepoContributionSchema = z.object({
   additions: z.number().int().nonnegative(),
   deletions: z.number().int().nonnegative(),
   language: z.string().optional(),
+  // Phase 3 enrichment (optional — older records still validate)
+  changedFiles: z.number().int().nonnegative().optional(),
+  commitMessages: z.array(z.string()).optional(),
+  touchedAreas: z.array(z.string()).optional(),
 });
 
 export const PullRequestSchema = z.object({

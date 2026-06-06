@@ -42,7 +42,7 @@ export function updateBlogLog(entry: BlogLogEntry): void {
     return;
   }
 
-  let lines = content.split('\n');
+  const lines = content.split('\n');
 
   // Find the blog log table header row
   const headerIdx = lines.findIndex((l) => l.startsWith('| Week') && l.includes('Headline'));

@@ -8,6 +8,11 @@ const DEVTO_BASE = 'https://dev.to/api';
 // Use shared rate limiter (DEV.to allows 30 req/30s for API key users)
 const rateLimited = devtoLimiter;
 
+/** DEV.to tags: max 4, lowercase, alphanumeric only. */
+export function normalizeDevtoTags(tags: string[]): string[] {
+  return tags.slice(0, 4).map((t) => t.toLowerCase().replace(/[^a-z0-9]/g, ''));
+}
+
 function headers() {
   return {
     'Content-Type': 'application/json',
@@ -21,6 +26,7 @@ export async function createDevtoArticle(opts: {
   tags: string[];
   published?: boolean;
   canonical_url?: string;
+  main_image?: string;
 }): Promise<{ articleId: number; articleUrl: string }> {
   const response = await rateLimited(() =>
     fetch(`${DEVTO_BASE}/articles`, {
@@ -30,11 +36,34 @@ export async function createDevtoArticle(opts: {
         article: {
           title: opts.title,
           body_markdown: opts.body_markdown,
-          tags: opts.tags.slice(0, 4).map((t) => t.toLowerCase().replace(/[^a-z0-9]/g, '')),
+          tags: normalizeDevtoTags(opts.tags),
           published: opts.published ?? false,
           canonical_url: opts.canonical_url,
+          main_image: opts.main_image,
         },
       }),
+    }),
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`DEV.to API error ${response.status}: ${body}`);
+  }
+
+  const data = (await response.json()) as { id: number; url: string };
+  return { articleId: data.id, articleUrl: data.url };
+}
+
+/** Update an existing DEV.to article (e.g. swap the cover via main_image). */
+export async function updateDevtoArticle(
+  id: number,
+  fields: { main_image?: string; title?: string; body_markdown?: string; canonical_url?: string },
+): Promise<{ articleId: number; articleUrl: string }> {
+  const response = await rateLimited(() =>
+    fetch(`${DEVTO_BASE}/articles/${id}`, {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ article: fields }),
     }),
   );
 
@@ -56,6 +85,7 @@ export const createDevtoArticleTool = createTool({
     tags: z.array(z.string()).max(4).describe('Tags (max 4, lowercase)'),
     published: z.boolean().default(false).describe('Publish immediately or save as draft'),
     canonical_url: z.string().optional().describe('Canonical URL (e.g. Notion page)'),
+    main_image: z.string().optional().describe('Cover image URL'),
   }),
   outputSchema: z.object({
     articleId: z.number(),
