@@ -44,4 +44,24 @@ describe('buildStatsCardSvg', () => {
     // no text node may rely on the bare generic, which resvg renders as a serif
     expect(svg).not.toMatch(/font-family="sans-serif"/);
   });
+
+  it('strips the "Dev log #n" prefix from the card title (the article keeps it)', () => {
+    const svg = buildStatsCardSvg(data, { ...blog, headline: 'Dev log #7 Shipping the auth flow' });
+    expect(svg).toContain('Shipping the auth flow');
+    expect(svg).not.toContain('Dev log #7');
+  });
+
+  it('does not render the week date on the card', () => {
+    const svg = buildStatsCardSvg(data, blog);
+    expect(svg).not.toContain(data.weekStart);
+    expect(svg).not.toContain(data.weekEnd);
+  });
+
+  it('wraps a long title onto two lines so it fits', () => {
+    const long = 'Bridging the Gap: TLS Interop, p2p Hardening, and Neovim Refinement Across the Stack';
+    const svg = buildStatsCardSvg(data, { ...blog, headline: `Dev log #5 ${long}` });
+    // two title <text> nodes at the header (fill #e5e5e5), none overflowing as one line
+    const titleNodes = (svg.match(/fill="#e5e5e5"/g) ?? []).length;
+    expect(titleNodes).toBe(2);
+  });
 });
