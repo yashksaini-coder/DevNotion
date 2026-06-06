@@ -34,6 +34,20 @@ flowchart TD
 
 The pipeline only uses an LLM where it adds value (narration). Harvest, the stats card, and publishing are deterministic — no token overhead, no hallucinated numbers.
 
+## Screenshots
+
+**Dashboard** — run history with status badges and Review & Publish actions:
+
+![DevNotion dashboard](assets/Dashboard.png)
+
+**Preview & edit** — read the generated draft, tweak it in the browser, then approve:
+
+![Preview and edit screen](assets/Edit-Review.png)
+
+**Public landing page** — Swiss hero with social links:
+
+![DevNotion landing page](assets/Landing.png)
+
 ## Key features
 
 - **Multi-LLM** — set `LLM_PROVIDER=gemini|openai|anthropic`. Default model is `gemini-3-flash-preview` (free tier eligible). One source of truth for model selection.

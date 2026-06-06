@@ -1,13 +1,4 @@
----
-title: "I Revived My $500 Prize-Winning Project — And Finally Made It Trustworthy"
-published: false
-tags: devchallenge, githubchallenge, ai, typescript
-cover_image: https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/heads/feature/devnotion-v2-revival/assets/generated/2026-01-19/stats.png
----
-
 *This is a submission for the [GitHub Finish-Up-A-Thon Challenge](https://dev.to/challenges/github-2026-05-21)*
-
-> **[Editor's note — delete before publishing]** The cover, the stats-card shot, the architecture diagram, the landing page, and the Copilot screenshot are already filled in. Two slots still say `REPLACE_WITH_IMAGE_URL` — the dashboard history and the preview/edit screen. Grab those from your running dashboard, drop them into the DEV.to editor, and paste the URLs. Trim *"My Experience with GitHub Copilot"* to what you actually did. The `{% github %}` lines are DEV.to embeds — they turn into repo cards on the platform, so ignore how they look here.
 
 ## What I Built
 
@@ -27,7 +18,9 @@ One idea ran under the whole rebuild: a tool that writes in your voice and posts
 
 {% github yashksaini-coder/DevNotion %}
 
-![Dashboard run history — dark UI, status badges (Preview Ready / Published), Review & Publish actions](REPLACE_WITH_IMAGE_URL)
+![Dashboard run history — dark UI, status badges (Preview Ready / Published), Review & Publish actions](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/fsiudg6v7r1hvqwtrljh.png)
+
+![Preview & edit screen — the generated post in an editable markdown box, an Approve & Publish button, and a stats grid](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/irt7pzvz3mxkzvolbpbi.png)
 
 ![Preview & edit screen — the generated post in an editable markdown box, an Approve & Publish button, and a stats grid](REPLACE_WITH_IMAGE_URL)
 
@@ -38,16 +31,6 @@ One idea ran under the whole rebuild: a tool that writes in your voice and posts
 ![Architecture — three agents, generation split from publishing by a human approval gate](https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/heads/feature/devnotion-v2-revival/assets/Architecture.png)
 
 Three specialist agents, with generation and publishing deliberately split by a human approval gate:
-
-```mermaid
-flowchart TD
-    A["weekStart"] --> H["1 · Harvest Agent<br/>GitHub GraphQL + per-commit deltas, touched areas"]
-    H --> N["2 · Narrator Agent<br/>gemini-3-flash-preview · fail-loud"]
-    N --> S["Stats card (deterministic SVG→PNG, used as cover)"]
-    S --> P["draft persisted"]
-    P --> G{"Approval gate (dashboard)<br/>preview · edit · approve"}
-    G -->|approve| PUB["3 · Publisher Agent<br/>Notion · DEV.to · Hashnode + author footer"]
-```
 
 Each agent does one thing and only one thing. **Harvest** is pure data — two quick GraphQL/REST passes over the week, no LLM anywhere near it. **Narrate** is the single model call: raw data goes in, a first-person post comes out, in whatever tone you picked. **Publish** is plumbing — a Notion page, a DEV.to draft, a Hashnode draft if you've set it up, plus the cover and the footer. And right in the middle, between writing and shipping, there's a human. That gate is the whole reason v2 exists.
 
