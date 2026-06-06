@@ -37,4 +37,11 @@ describe('buildStatsCardSvg', () => {
     expect(svg).toContain('&lt;auth&gt;');
     expect(svg).toContain('&amp;');
   });
+
+  it('uses a concrete font family, not the bare CSS generic (resvg cannot resolve "sans-serif" alone)', () => {
+    const svg = buildStatsCardSvg(data, blog);
+    expect(svg).toContain('Liberation Sans');
+    // no text node may rely on the bare generic, which resvg renders as a serif
+    expect(svg).not.toMatch(/font-family="sans-serif"/);
+  });
 });
