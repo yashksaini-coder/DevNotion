@@ -54,6 +54,28 @@ export async function createDevtoArticle(opts: {
   return { articleId: data.id, articleUrl: data.url };
 }
 
+/** Update an existing DEV.to article (e.g. swap the cover via main_image). */
+export async function updateDevtoArticle(
+  id: number,
+  fields: { main_image?: string; title?: string; body_markdown?: string; canonical_url?: string },
+): Promise<{ articleId: number; articleUrl: string }> {
+  const response = await rateLimited(() =>
+    fetch(`${DEVTO_BASE}/articles/${id}`, {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ article: fields }),
+    }),
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`DEV.to API error ${response.status}: ${body}`);
+  }
+
+  const data = (await response.json()) as { id: number; url: string };
+  return { articleId: data.id, articleUrl: data.url };
+}
+
 export const createDevtoArticleTool = createTool({
   id: 'devto-create-article',
   description: 'Create a new article on DEV.to',
