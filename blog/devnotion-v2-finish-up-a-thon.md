@@ -29,7 +29,7 @@ The one idea behind the whole rebuild: *a tool that writes in your voice and pub
 
 `[Screenshot: the preview/edit screen — the generated post in an editable markdown box, an "Approve & Publish" button, and a stats grid]`
 
-`[Screenshot: the auto-generated weekly stats card — 13 commits · +2,252 / −293 · 3 repos]`
+`[Screenshot: the auto-generated weekly stats card — post title + 13 commits · +2,252 / −293 · 3 repos]`
 
 Three specialist agents, with generation and publishing deliberately split by a human approval gate:
 
@@ -158,7 +158,7 @@ const stats = [
 ];
 ```
 
-The card now ships as the cover/social image on every target — DEV.to's `main_image`, the Hashnode cover, the Notion page cover. **Code** for the factual card means an LLM can never hallucinate `2,252` into `2,000`, and the cover went from *never working* to *always working* in the same change that deleted code: no API, no quota, no fallback path — it just renders. That's the rare refactor where the simplification and the quality win are the same move.
+The card leads with the post title and the week's headline metrics — commits, PRs, reviews, lines added/removed, repos — and ships as the cover/social image on every target: DEV.to's `main_image`, the Hashnode cover, the Notion page cover. (The `Dev log #n` number stays on the *article* title, not the cover, so the banner is all title and numbers, and a long title wraps cleanly instead of running off the edge.) **Code** for the factual card means an LLM can never hallucinate `2,252` into `2,000`, and the cover went from *never working* to *always working* in the same change that deleted code: no API, no quota, no fallback path — it just renders. That's the rare refactor where the simplification and the quality win are the same move.
 
 ### Phase 6 — A dashboard worth screenshotting
 
@@ -166,7 +166,7 @@ The three dashboard routes had drifted into three slightly-different stylesheets
 
 ### Phase 7 — Tests
 
-**49 tests across 18 suites** now cover the frontmatter parser, the fail-loud path, the deterministic fallback, tag normalization, provider/model selection, publish-target selection, the diff aggregation, and the stats-card builder.
+**51 tests across 18 suites** now cover the frontmatter parser, the fail-loud path, the deterministic fallback, tag normalization, provider/model selection, publish-target selection, the diff aggregation, and the stats-card builder (including the cover's title-strip and wrap).
 
 ### Before vs after
 
@@ -179,7 +179,7 @@ The three dashboard routes had drifted into three slightly-different stylesheets
 | Line stats | PR-only (`+0/-0` on commit weeks) | real per-commit deltas + touched areas |
 | Cover image | none | Deterministic stats card, used as the cover |
 | Setup | hand-edit `.env` | `npx devnotion init` wizard |
-| Tests | a handful | 49 across 18 suites |
+| Tests | a handful | 51 across 18 suites |
 
 > **Before:** "It works, but you have to trust it blindly."
 > **After:** "It works, and it gets out of your way — safely."
@@ -216,7 +216,7 @@ What changed most wasn't raw speed — it was *confidence flowing back into a co
 ## Results & Validation
 
 - **7 phases, shipped incrementally** — each verified against `tsc` and the test suite before the next.
-- **49 tests / 18 suites, green.**
+- **51 tests / 18 suites, green.**
 - The narration path was confirmed live on the free tier (`gemini-3-flash-preview`), the harvest fix verified on a real week (`+0/-0` → `+2,252/-293`), and the stats card rendered to a real 1200×630 PNG.
 
 ## What's Next

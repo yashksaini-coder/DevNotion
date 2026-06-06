@@ -17,7 +17,7 @@ Here's what changed:
 - The pipeline is split so I **review and edit every post before it publishes**
 - Line stats come from real commits, so a commit-heavy week no longer reports `+0/-0`
 - It runs on Gemini, OpenAI, or Anthropic instead of one hardcoded model
-- There's a dashboard, a landing page, a deterministic stats-card cover, and 43 tests where there used to be a handful
+- There's a dashboard, a landing page, a deterministic stats-card cover, and 51 tests where there used to be a handful
 
 ## Background
 
@@ -110,7 +110,7 @@ const stats = [
 ];
 ```
 
-A model would happily round 2,252 to "about 2,000," and a cover with wrong stats is worse than none. The card now ships as the cover on every target — DEV.to, Hashnode, Notion. Deleting the AI cover made the feature *more* reliable, not less: it went from never working to always working, with no API call in the path.
+A model would happily round 2,252 to "about 2,000," and a cover with wrong stats is worse than none. The card leads with the post title and the week's metrics, and ships as the cover on every target — DEV.to, Hashnode, Notion. (The `Dev log #n` number lives on the article title, not the card, so the banner is all title and numbers and long titles wrap instead of clipping.) Deleting the AI cover made the feature *more* reliable, not less: it went from never working to always working, with no API call in the path.
 
 > **Note:** The cover is deterministic. There's no quota to exhaust, no fallback to reason about, and nothing about the cover can block a publish — it just renders.
 
@@ -127,7 +127,7 @@ A model would happily round 2,252 to "about 2,000," and a cover with wrong stats
 | Line stats | PR-only (`+0/-0` on commit weeks) | real per-commit deltas + touched areas |
 | Cover image | none | Deterministic stats card, used as the cover |
 | Setup | hand-edited `.env` | `npx devnotion init` |
-| Tests | a handful | 43 across 17 suites |
+| Tests | a handful | 51 across 18 suites |
 
 The architecture barely changed — same specialist-functions-with-an-LLM-in-the-middle shape it always had. What changed is everything around it: the failure behavior, the review step, the data quality, the provider flexibility. v2 is v1 with the parts I ran out of time for in March.
 

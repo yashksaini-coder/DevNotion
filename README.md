@@ -39,7 +39,7 @@ The pipeline only uses an LLM where it adds value (narration). Harvest, the stat
 - **Multi-LLM** — set `LLM_PROVIDER=gemini|openai|anthropic`. Default model is `gemini-3-flash-preview` (free tier eligible). One source of truth for model selection.
 - **Preview → edit → publish gate** — the dashboard generates a draft, shows it (with images) for review and in-browser markdown editing, and publishes only on **Approve**. The headless/cron path can default to drafts.
 - **Diff-enriched harvest** — real per-repo/commit line deltas, changed-file counts, commit messages, and the top directories you touched (e.g. `src/server`) — so the narration is specific, not generic.
-- **Cover image** — a deterministic stats card (SVG → PNG, 1200×630) rendered locally from the week's exact numbers, used as the cover/social image on every target (DEV.to `main_image`, Hashnode cover, Notion page cover). No API, no quota — best-effort and never blocks a run.
+- **Cover image** — a deterministic stats card (SVG → PNG, 1200×630) that leads with the post title (wrapped to fit) and the week's exact metrics — commits, PRs, reviews, lines changed, repos. Used as the cover/social image on every target (DEV.to `main_image`, Hashnode cover, Notion page cover). No API, no quota — best-effort and never blocks a run.
 - **Author/social footer** — name, bio, and links rendered on every post from one config (`src/config/author.ts`).
 - **Fail-loud** — if narration hits a quota/parse error, the run is marked failed and nothing is published (no silent fallback stub).
 - **Rate-limited & resilient** — `p-queue` + `p-retry` wrappers per API (Notion, DEV.to, Hashnode, GitHub).
