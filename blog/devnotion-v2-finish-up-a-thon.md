@@ -2,12 +2,12 @@
 title: "I Revived My $500 Prize-Winning Project — And Finally Made It Trustworthy"
 published: false
 tags: devchallenge, githubchallenge, ai, typescript
-cover_image:
+cover_image: https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/heads/feature/devnotion-v2-revival/assets/generated/2026-01-19/stats.png
 ---
 
 *This is a submission for the [GitHub Finish-Up-A-Thon Challenge](https://dev.to/challenges/github-2026-05-21)*
 
-> **[Editor's note — delete before publishing]** Search for **`REPLACE_WITH_IMAGE_URL`** and swap each one for a real image URL (drag a file into the DEV.to editor to host it, then paste the URL). Set a `cover_image:` too — the weekly stats card works well as the cover. In *"My Experience with GitHub Copilot"* keep only what matches your actual usage. The `{% github %}` lines are DEV.to **liquid embeds** — they render as rich repo cards on the platform, so ignore how they look in plain markdown. Everything else is finished prose.
+> **[Editor's note — delete before publishing]** The `cover_image:` and the Demo stats-card slot are pre-filled with a real generated card (week of 2026-01-19). For the remaining screenshots, search for **`REPLACE_WITH_IMAGE_URL`** and swap each one for a real image URL (drag a file into the DEV.to editor to host it, then paste the URL). In *"My Experience with GitHub Copilot"* keep only what matches your actual usage. The `{% github %}` lines are DEV.to **liquid embeds** — they render as rich repo cards on the platform, so ignore how they look in plain markdown. Everything else is finished prose.
 
 ## What I Built
 
@@ -31,7 +31,7 @@ The one idea behind the whole rebuild: *a tool that writes in your voice and pub
 
 ![Preview & edit screen — the generated post in an editable markdown box, an Approve & Publish button, and a stats grid](REPLACE_WITH_IMAGE_URL)
 
-![Weekly stats card used as the cover — post title + 13 commits · +2,252 / −293 · 3 repos](REPLACE_WITH_IMAGE_URL)
+![Weekly stats card used as the cover — "Bridging the Gap…" + 35 commits · +11,222 / −2,713 · 5 repos](https://raw.githubusercontent.com/yashksaini-coder/DevNotion/refs/heads/feature/devnotion-v2-revival/assets/generated/2026-01-19/stats.png)
 
 ![Public landing page — Swiss hero with social links](REPLACE_WITH_IMAGE_URL)
 
