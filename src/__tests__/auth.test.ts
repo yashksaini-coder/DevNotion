@@ -6,6 +6,7 @@ import {
   isSessionValid,
   destroySession,
   readCookie,
+  safeInternalPath,
   SESSION_TTL_MS,
   SESSION_COOKIE,
 } from '../server/auth.js';
@@ -54,6 +55,20 @@ describe('session lifecycle (10-minute TTL)', () => {
     const id = createSession();
     destroySession(id);
     expect(isSessionValid(id)).toBe(false);
+  });
+});
+
+describe('safeInternalPath (open-redirect guard)', () => {
+  it('accepts genuine internal paths', () => {
+    expect(safeInternalPath('/runs')).toBe('/runs');
+    expect(safeInternalPath('/preview/abc-123?x=1')).toBe('/preview/abc-123?x=1');
+  });
+
+  it('rejects absolute, protocol-relative, and backslash-escaped targets', () => {
+    // backslash matters: browsers normalize "\" to "/", so "/\evil.com" → "//evil.com"
+    for (const bad of ['//evil.com', '/\\evil.com', '/\\/evil.com', 'https://evil.com', 'http://x', 'evil.com', '/', '', undefined, null, 42]) {
+      expect(safeInternalPath(bad)).toBe('/runs');
+    }
   });
 });
 

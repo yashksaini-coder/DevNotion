@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { env } from '../config/env.js';
 import { STYLES } from './views/layout.js';
 import { authMiddleware } from './middleware/auth.js';
-import { isAuthEnabled, verifyPassword, createSession, destroySession, readCookie, SESSION_COOKIE, SESSION_TTL_MS } from './auth.js';
+import { isAuthEnabled, verifyPassword, createSession, destroySession, readCookie, safeInternalPath, SESSION_COOKIE, SESSION_TTL_MS } from './auth.js';
 import { landingRouter } from './routes/landing.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { runRouter } from './routes/run.js';
@@ -61,9 +61,7 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { password, redirect } = req.body as { password?: string; redirect?: string };
-  // Only allow internal redirect targets — never an absolute/protocol-relative URL.
-  const target =
-    typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/runs';
+  const target = safeInternalPath(redirect);
   if (password && verifyPassword(password)) {
     const sessionId = createSession();
     res.cookie(SESSION_COOKIE, sessionId, { httpOnly: true, sameSite: 'lax', maxAge: SESSION_TTL_MS, path: '/' });

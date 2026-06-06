@@ -70,6 +70,15 @@ export function destroySession(id: string | undefined): void {
   if (id) sessions.delete(id);
 }
 
+/**
+ * Sanitize a post-login redirect target to an internal path — prevents open redirects.
+ * Must be `/` followed by a non-slash, non-backslash char. Browsers normalize `\` to `/`,
+ * so `//evil.com` AND `/\evil.com` (and absolute URLs) all fall back to the safe default.
+ */
+export function safeInternalPath(redirect: unknown, fallback = '/runs'): string {
+  return typeof redirect === 'string' && /^\/[^/\\]/.test(redirect) ? redirect : fallback;
+}
+
 // ─── cookie parsing (no cookie-parser dependency) ───
 
 /** Read a single cookie value from a raw Cookie header. */
